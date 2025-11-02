@@ -27,7 +27,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="flex min-h-screen flex-col">
+          <main className="flex-1">{children}</main>
+          <footer className="border-t bg-neutral-100 py-6 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300">
+            <div className="container mx-auto px-4 text-center">
+              <p className="font-medium text-neutral-800 dark:text-neutral-100">
+                MonkMonkeyKey
+              </p>
+              <p>© {new Date().getFullYear()} All rights reserved.</p>
+            </div>
+          </footer>
+        </div>
       </body>
     </html>
   );
