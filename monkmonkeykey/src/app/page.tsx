@@ -1,64 +1,108 @@
 import Image from "next/image";
 
+const testimonials = [
+  {
+    quote:
+      "La claridad estratégica que recibimos nos permitió articular una visión compartida en todo el equipo en menos de un mes.",
+    name: "Daniela García",
+    role: "Directora de Innovación",
+    organization: "Studio Norte",
+  },
+  {
+    quote:
+      "Transformaron una idea compleja en un sistema de marca simple y poderoso que ahora guía todas nuestras decisiones.",
+    name: "Leonardo Pérez",
+    role: "CEO",
+    organization: "Orbital",
+  },
+  {
+    quote:
+      "El acompañamiento fue impecable: procesos ligeros, preguntas profundas y resultados con los que la organización se identifica.",
+    name: "Isabel Méndez",
+    role: "People & Culture",
+    organization: "Casa del Sol",
+  },
+  {
+    quote:
+      "Nos ayudaron a ordenar nuestras prioridades y diseñar una narrativa honesta que hoy conecta con nuestros aliados.",
+    name: "Mauricio Rojas",
+    role: "Cofundador",
+    organization: "Alameda",
+  },
+];
+
+const partners = [
+  { name: "Atlas", logo: "/partners/atlas.svg" },
+  { name: "Monument", logo: "/partners/monument.svg" },
+  { name: "Helios", logo: "/partners/helios.svg" },
+  { name: "Radii", logo: "/partners/radii.svg" },
+];
+
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900">
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-24 px-6 py-16 sm:px-10 lg:px-16">
+        <header className="flex flex-col gap-8">
+          <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Consultoría creativa</p>
+          <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-5xl">
+            Estrategias, marcas y experiencias diseñadas con precisión y calma.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="max-w-2xl text-lg leading-relaxed text-zinc-600">
+            Acompañamos equipos visionarios a construir sistemas claros, sensibles y sostenibles. Nuestro trabajo cruza
+            investigación, identidad y diseño de servicios para transformar organizaciones desde adentro.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <div className="flex flex-wrap gap-3 text-sm text-zinc-500">
+            <span className="rounded-full border border-zinc-200 px-4 py-2">Diagnóstico de marca</span>
+            <span className="rounded-full border border-zinc-200 px-4 py-2">Arquitectura narrativa</span>
+            <span className="rounded-full border border-zinc-200 px-4 py-2">Diseño de experiencias</span>
+          </div>
+        </header>
+
+        <section className="flex flex-col gap-10">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-sm uppercase tracking-[0.3em] text-zinc-500">Testimonios</h2>
+            <p className="max-w-2xl text-2xl font-medium leading-tight text-zinc-900">
+              Voces de quienes confían en procesos cuidadosamente diseñados.
+            </p>
+          </div>
+          <div className="grid gap-8 sm:grid-cols-2">
+            {testimonials.map((testimonial) => (
+              <article
+                key={`${testimonial.name}-${testimonial.organization}`}
+                className="flex h-full flex-col justify-between gap-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.25)]"
+              >
+                <blockquote className="text-lg leading-relaxed text-zinc-700">
+                  “{testimonial.quote}”
+                </blockquote>
+                <footer className="flex flex-col gap-1 text-sm uppercase tracking-[0.2em] text-zinc-500">
+                  <span className="font-medium text-zinc-900">{testimonial.name}</span>
+                  <span>
+                    {testimonial.role} · {testimonial.organization}
+                  </span>
+                </footer>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-10 pb-16">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-sm uppercase tracking-[0.3em] text-zinc-500">Alianzas</h2>
+            <p className="max-w-xl text-2xl font-medium leading-tight text-zinc-900">
+              Colaboramos con equipos que valoran la simplicidad y el detalle.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {partners.map((partner) => (
+              <div
+                key={partner.name}
+                className="flex items-center justify-center rounded-3xl border border-zinc-200 bg-white py-8 transition-colors hover:border-zinc-300"
+              >
+                <Image src={partner.logo} alt={`${partner.name} logo`} width={120} height={40} priority />
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );
