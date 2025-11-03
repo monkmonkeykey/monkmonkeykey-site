@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SiteShell } from "@/components/site/SiteShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="antialiased bg-background text-foreground">{children}</body>
+      <body className="antialiased">
+        <SiteShell>{children}</SiteShell>
+      </body>
     </html>
   );
 }
