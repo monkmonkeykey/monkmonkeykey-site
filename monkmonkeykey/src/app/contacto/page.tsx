@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+
 import { translate } from "@/lib/i18n";
 import { useLocale } from "@/components/site/locale-context";
 
@@ -21,13 +23,27 @@ export default function ContactPage() {
 
   return (
     <div className="space-y-10">
-      <header className="max-w-2xl space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          {translate(locale, PAGE_TITLE)}
-        </h1>
-        <p className="text-base text-foreground/70 sm:text-lg">
-          {translate(locale, PAGE_COPY)}
-        </p>
+      <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-2xl space-y-4">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            {translate(locale, PAGE_TITLE)}
+          </h1>
+          <p className="text-base text-foreground/70 sm:text-lg">
+            {translate(locale, PAGE_COPY)}
+          </p>
+        </div>
+        <div className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border border-foreground/10 bg-foreground/5">
+          <Image
+            src="/images/contact-visual.svg"
+            alt={
+              locale === "es"
+                ? "Ilustración abstracta de una reunión de trabajo"
+                : "Abstract illustration of a working session"
+            }
+            fill
+            className="object-cover"
+          />
+        </div>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-2">

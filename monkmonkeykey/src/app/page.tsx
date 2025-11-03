@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { CLIENTS } from "@/content/clients";
 import { PROJECTS } from "@/content/projects";
@@ -52,7 +53,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-20">
-      <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
+      <section className="grid gap-10 lg:grid-cols-[1.05fr,0.95fr] lg:items-center">
         <div className="space-y-6">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
             {translate(locale, HERO_HEADLINE)}
@@ -76,42 +77,69 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-4 rounded-3xl border border-foreground/10 bg-foreground/5 p-6 text-sm text-foreground/80">
-          <div className="rounded-2xl bg-background p-4 shadow-sm">
-            <p className="font-semibold">Discovery</p>
-            <p className="mt-2 text-sm text-foreground/70">
-              {locale === "es"
-                ? "Sumamos investigación rápida y workshops con tu equipo para entender el contexto desde el inicio."
-                : "We run rapid research and workshops with your team to understand context from day one."}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-background p-4 shadow-sm">
-            <p className="font-semibold">Delivery</p>
-            <p className="mt-2 text-sm text-foreground/70">
-              {locale === "es"
-                ? "Trabajamos en ciclos cortos, con prototipos validados y métricas claras por sprint."
-                : "We work in short cycles, with validated prototypes and clear metrics each sprint."}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-background p-4 shadow-sm">
-            <p className="font-semibold">Growth</p>
-            <p className="mt-2 text-sm text-foreground/70">
-              {locale === "es"
-                ? "Activamos experimentos de crecimiento y aprendizaje continuo para sostener resultados."
-                : "We activate growth experiments and continuous learning to sustain outcomes."}
-            </p>
+        <div className="relative overflow-hidden rounded-3xl border border-foreground/10 bg-foreground/5">
+          <Image
+            src="/images/hero-visual.svg"
+            alt={
+              locale === "es"
+                ? "Ilustración abstracta del flujo de trabajo de producto"
+                : "Abstract illustration of a product workflow"
+            }
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="relative grid gap-4 p-6 text-sm text-foreground/80 sm:p-8">
+            <div className="rounded-2xl bg-background/90 p-4 shadow-sm backdrop-blur">
+              <p className="font-semibold">Discovery</p>
+              <p className="mt-2 text-sm text-foreground/70">
+                {locale === "es"
+                  ? "Sumamos investigación rápida y workshops con tu equipo para entender el contexto desde el inicio."
+                  : "We run rapid research and workshops with your team to understand context from day one."}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-background/90 p-4 shadow-sm backdrop-blur">
+              <p className="font-semibold">Delivery</p>
+              <p className="mt-2 text-sm text-foreground/70">
+                {locale === "es"
+                  ? "Trabajamos en ciclos cortos, con prototipos validados y métricas claras por sprint."
+                  : "We work in short cycles, with validated prototypes and clear metrics each sprint."}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-background/90 p-4 shadow-sm backdrop-blur">
+              <p className="font-semibold">Growth</p>
+              <p className="mt-2 text-sm text-foreground/70">
+                {locale === "es"
+                  ? "Activamos experimentos de crecimiento y aprendizaje continuo para sostener resultados."
+                  : "We activate growth experiments and continuous learning to sustain outcomes."}
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="space-y-10">
-        <header className="max-w-3xl space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {translate(locale, HOME_SERVICES_TITLE)}
-          </h2>
-          <p className="text-base text-foreground/70">
-            {translate(locale, HOME_SERVICES_COPY)}
-          </p>
+        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {translate(locale, HOME_SERVICES_TITLE)}
+            </h2>
+            <p className="text-base text-foreground/70">
+              {translate(locale, HOME_SERVICES_COPY)}
+            </p>
+          </div>
+          <div className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border border-foreground/10 bg-foreground/5">
+            <Image
+              src="/images/services-visual.svg"
+              alt={
+                locale === "es"
+                  ? "Ilustración abstracta de servicios modulares"
+                  : "Abstract illustration of modular services"
+              }
+              fill
+              className="object-cover"
+            />
+          </div>
         </header>
         <div className="grid gap-6 md:grid-cols-3">
           {SERVICES.map((service) => (
@@ -147,15 +175,29 @@ export default function HomePage() {
       </section>
 
       <section className="space-y-8">
-        <header className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {translate(locale, HOME_PROJECTS_TITLE)}
-          </h2>
-          <p className="text-base text-foreground/70">
-            {locale === "es"
-              ? "Casos end-to-end donde combinamos estrategia, diseño y crecimiento para entregar impacto medible."
-              : "End-to-end projects where we blend strategy, design, and growth to deliver measurable impact."}
-          </p>
+        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {translate(locale, HOME_PROJECTS_TITLE)}
+            </h2>
+            <p className="text-base text-foreground/70">
+              {locale === "es"
+                ? "Casos end-to-end donde combinamos estrategia, diseño y crecimiento para entregar impacto medible."
+                : "End-to-end projects where we blend strategy, design, and growth to deliver measurable impact."}
+            </p>
+          </div>
+          <div className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border border-foreground/10 bg-foreground/5">
+            <Image
+              src="/images/projects-visual.svg"
+              alt={
+                locale === "es"
+                  ? "Ilustración abstracta de tableros de proyectos"
+                  : "Abstract illustration of project boards"
+              }
+              fill
+              className="object-cover"
+            />
+          </div>
         </header>
         <div className="grid gap-6 lg:grid-cols-2">
           {PROJECTS.slice(0, 2).map((project) => (
@@ -199,15 +241,29 @@ export default function HomePage() {
       </section>
 
       <section className="space-y-6">
-        <header className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {translate(locale, HOME_CLIENTS_TITLE)}
-          </h2>
-          <p className="text-base text-foreground/70">
-            {locale === "es"
-              ? "Colaboramos con equipos de producto, innovación y data en toda Latinoamérica y Europa."
-              : "We collaborate with product, innovation, and data teams across Latin America and Europe."}
-          </p>
+        <header className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {translate(locale, HOME_CLIENTS_TITLE)}
+            </h2>
+            <p className="text-base text-foreground/70">
+              {locale === "es"
+                ? "Colaboramos con equipos de producto, innovación y data en toda Latinoamérica y Europa."
+                : "We collaborate with product, innovation, and data teams across Latin America and Europe."}
+            </p>
+          </div>
+          <div className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border border-foreground/10 bg-foreground/5">
+            <Image
+              src="/images/clients-visual.svg"
+              alt={
+                locale === "es"
+                  ? "Ilustración abstracta de una red de clientes"
+                  : "Abstract illustration of a client network"
+              }
+              fill
+              className="object-cover"
+            />
+          </div>
         </header>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {CLIENTS.map((client) => (
