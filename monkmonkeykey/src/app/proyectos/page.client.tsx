@@ -7,7 +7,7 @@ import type {
   LocalizedValue,
   Project,
   ProjectCategory,
-} from "@/content/projects";
+} from "@/domain/projects";
 import { translate, type Locale, type LocaleText } from "@/lib/i18n";
 import { useLocale } from "@/components/site/locale-context";
 

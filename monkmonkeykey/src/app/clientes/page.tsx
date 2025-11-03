@@ -1,7 +1,8 @@
 import ClientsPageClient from "./page.client";
 
-import { CLIENTS } from "@/content/clients";
+import { getClients } from "@/data/clients";
 
-export default function ClientsPage() {
-  return <ClientsPageClient clients={CLIENTS} />;
+export default async function ClientsPage() {
+  const clients = await getClients();
+  return <ClientsPageClient clients={clients} />;
 }

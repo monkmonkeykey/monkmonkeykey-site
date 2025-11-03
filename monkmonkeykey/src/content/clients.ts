@@ -8,6 +8,8 @@ export type ClientImage = {
   alt: LocaleText;
 };
 
+export type ClientKind = "client" | "institution" | "partner";
+
 export type Client = {
   slug: string;
   name: string;
@@ -15,6 +17,7 @@ export type Client = {
   summary: LocaleText;
   website?: string;
   image?: ClientImage;
+  kind: ClientKind;
 };
 
 type ClientFrontmatter = {
@@ -25,6 +28,7 @@ type ClientFrontmatter = {
   summary: LocaleText;
   website?: string;
   image?: ClientImage;
+  kind?: ClientKind;
 };
 
 const FRONTMATTER_REGEX = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*/;
@@ -97,6 +101,7 @@ const readClientFile = (filePath: string): { client: Client; order: number } => 
     summary: parseLocaleText(frontmatter.summary, `${frontmatter.name} summary`),
     website: frontmatter.website,
     image: parseImage(frontmatter.image, frontmatter.name),
+    kind: frontmatter.kind ?? "client",
   };
 
   return { client, order: frontmatter.order ?? Number.MAX_SAFE_INTEGER };

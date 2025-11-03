@@ -1,11 +1,13 @@
 import ProjectsPageClient from "./page.client";
 
-import { PROJECTS, PROJECT_CATEGORY_LABELS } from "@/content/projects";
+import { PROJECT_CATEGORY_LABELS } from "@/domain/projects";
+import { getProjects } from "@/data/projects";
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const projects = await getProjects();
   return (
     <ProjectsPageClient
-      projects={PROJECTS}
+      projects={projects}
       categoryLabels={PROJECT_CATEGORY_LABELS}
     />
   );

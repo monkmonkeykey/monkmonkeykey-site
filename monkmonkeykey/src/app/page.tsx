@@ -1,14 +1,17 @@
 import HomePageClient from "./page.client";
 
-import { CLIENTS } from "@/content/clients";
-import { PROJECTS, PROJECT_CATEGORY_LABELS } from "@/content/projects";
+import { PROJECT_CATEGORY_LABELS } from "@/domain/projects";
 import { SERVICES } from "@/content/services";
+import { getClients } from "@/data/clients";
+import { getProjects } from "@/data/projects";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [projects, clients] = await Promise.all([getProjects(), getClients()]);
+
   return (
     <HomePageClient
-      projects={PROJECTS}
-      clients={CLIENTS}
+      projects={projects}
+      clients={clients}
       services={SERVICES}
       categoryLabels={PROJECT_CATEGORY_LABELS}
     />
