@@ -95,52 +95,27 @@ const imageHasData = (image: ImageField): boolean =>
 const randomId = () => Math.random().toString(36).slice(2, 10);
 
 const uploadToCloudinary = async (file: File, folder: string) => {
-  const signatureResponse = await fetch("/api/uploads/signature", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ folder }),
-  });
-
-  if (!signatureResponse.ok) {
-    const data = await signatureResponse.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? "No fue posible generar la firma de subida");
-  }
-
-  const signature = (await signatureResponse.json()) as {
-    uploadUrl: string;
-    apiKey: string;
-    signature: string;
-    timestamp: number;
-    folder?: string;
-  };
-
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("api_key", signature.apiKey);
-  formData.append("timestamp", String(signature.timestamp));
-  formData.append("signature", signature.signature);
 
-  if (signature.folder) {
-    formData.append("folder", signature.folder);
+  if (folder.trim().length > 0) {
+    formData.append("folder", folder);
   }
 
-  const uploadResponse = await fetch(signature.uploadUrl, {
+  const response = await fetch("/api/uploads", {
     method: "POST",
     body: formData,
+    credentials: "include",
   });
 
-  if (!uploadResponse.ok) {
-    const data = await uploadResponse.json().catch(() => ({}));
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
     throw new Error((data as { error?: string }).error ?? "Cloudinary rechazó la carga");
   }
 
-  const payload = (await uploadResponse.json()) as { public_id: string; secure_url: string };
+  const payload = (await response.json()) as { publicId: string; src: string };
 
-  return {
-    publicId: payload.public_id,
-    src: payload.secure_url,
-  };
+  return payload;
 };
 
 const ClientManager = ({
