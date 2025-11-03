@@ -50,6 +50,13 @@
       }
     }
   ],
+  "video": {
+    "url": "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+    "title": {
+      "es": "Tour por la identidad de Loop Brand Labs",
+      "en": "Loop Brand Labs identity reel"
+    }
+  },
   "description": {
     "es": [
       "Loop buscaba reposicionarse para atraer alianzas internacionales y capital semilla. El equipo necesitaba un lenguaje visual consistente y adaptable a múltiples formatos.",

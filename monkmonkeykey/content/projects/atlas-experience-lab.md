@@ -49,6 +49,13 @@
       }
     }
   ],
+  "video": {
+    "url": "https://vimeo.com/76979871",
+    "title": {
+      "es": "Recorrido del laboratorio Atlas Experience Lab",
+      "en": "Atlas Experience Lab walkthrough"
+    }
+  },
   "description": {
     "es": [
       "Atlas necesitaba un espacio dedicado para reunir investigación, prototipos y sesiones con clientes clave antes de grandes lanzamientos.",

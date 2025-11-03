@@ -12,6 +12,15 @@ export type ProjectGalleryImage = {
   alt: LocaleText;
 };
 
+export type ProjectVideoProvider = "youtube" | "vimeo";
+
+export type ProjectVideo = {
+  url: string;
+  provider: ProjectVideoProvider;
+  embedUrl: string;
+  title: LocaleText;
+};
+
 export type ProjectEntity = {
   slug: string;
   name: string;
@@ -51,6 +60,7 @@ export type Project = {
   location: LocalizedValue;
   cover: ProjectGalleryImage;
   gallery: ProjectGalleryImage[];
+  video?: ProjectVideo;
   description: LocaleText[];
   meta: { label: LocaleText; value: LocalizedValue }[];
   entities: ProjectEntity[];
@@ -67,6 +77,10 @@ type ProjectFrontmatter = {
   location: LocalizedValue;
   cover: ProjectGalleryImage;
   gallery: ProjectGalleryImage[];
+  video?: {
+    url: string;
+    title: LocaleText;
+  };
   description: Record<Locale, string[]>;
   meta: { label: LocaleText; value: LocalizedValue }[];
   entities?: string[];
@@ -109,6 +123,109 @@ const parseLocalizedValue = (value: unknown, field: string): LocalizedValue => {
   }
 
   return parseLocaleText(value, field);
+};
+
+const parseYouTubeStart = (value: string | null): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (/^\d+$/.test(value)) {
+    return Number.parseInt(value, 10);
+  }
+
+  const match = value.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const [, hours, minutes, seconds] = match;
+  const hoursValue = hours ? Number.parseInt(hours, 10) * 3600 : 0;
+  const minutesValue = minutes ? Number.parseInt(minutes, 10) * 60 : 0;
+  const secondsValue = seconds ? Number.parseInt(seconds, 10) : 0;
+
+  return hoursValue + minutesValue + secondsValue || undefined;
+};
+
+const parseVideo = (value: unknown, projectSlug: string): ProjectVideo | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (!value || typeof value !== "object") {
+    throw new Error(`Video for ${projectSlug} must be an object`);
+  }
+
+  const rawUrl = (value as Record<string, unknown>).url;
+  const rawTitle = (value as Record<string, unknown>).title;
+
+  if (typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
+    throw new Error(`Video for ${projectSlug} must include a url`);
+  }
+
+  let url: URL;
+
+  try {
+    url = new URL(rawUrl.trim());
+  } catch {
+    throw new Error(`Video url for ${projectSlug} is invalid`);
+  }
+
+  const hostname = url.hostname.replace(/^www\./, "");
+  let provider: ProjectVideoProvider | undefined;
+  let embedUrl: string | undefined;
+
+  if (hostname === "youtu.be" || hostname.endsWith("youtube.com")) {
+    provider = "youtube";
+    let videoId: string | null = null;
+
+    if (hostname === "youtu.be") {
+      const [id] = url.pathname.split("/").filter(Boolean);
+      videoId = id ?? null;
+    } else {
+      const pathSegments = url.pathname.split("/").filter(Boolean);
+      if (url.pathname === "/watch") {
+        videoId = url.searchParams.get("v");
+      } else if (pathSegments[0] === "embed" || pathSegments[0] === "shorts" || pathSegments[0] === "live") {
+        videoId = pathSegments[1] ?? null;
+      }
+    }
+
+    if (!videoId) {
+      throw new Error(`Video url for ${projectSlug} must include a valid YouTube id`);
+    }
+
+    const start = parseYouTubeStart(url.searchParams.get("start") ?? url.searchParams.get("t"));
+    embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+
+    if (start) {
+      embedUrl += `?start=${start}`;
+    }
+  } else if (hostname === "player.vimeo.com" || hostname.endsWith("vimeo.com")) {
+    provider = "vimeo";
+    const pathSegments = url.pathname.split("/").filter(Boolean);
+    const videoId = pathSegments.pop();
+
+    if (!videoId) {
+      throw new Error(`Video url for ${projectSlug} must include a valid Vimeo id`);
+    }
+
+    embedUrl = `https://player.vimeo.com/video/${videoId}`;
+  }
+
+  if (!provider || !embedUrl) {
+    throw new Error(
+      `Video url for ${projectSlug} must point to a supported provider (YouTube or Vimeo)`,
+    );
+  }
+
+  return {
+    url: rawUrl.trim(),
+    provider,
+    embedUrl,
+    title: parseLocaleText(rawTitle, `${projectSlug} video title`),
+  } satisfies ProjectVideo;
 };
 
 const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[] => {
@@ -233,6 +350,7 @@ const readProjectFile = (filePath: string): { project: Project; order: number } 
     location: parseLocalizedValue(frontmatter.location, `${frontmatter.slug} location`),
     cover,
     gallery: parseGallery(frontmatter.gallery, frontmatter.slug),
+    video: parseVideo(frontmatter.video, frontmatter.slug),
     description: parseDescription(frontmatter.description, frontmatter.slug),
     meta: parseMeta(frontmatter.meta, frontmatter.slug),
     entities: parseEntities(frontmatter.entities, frontmatter.slug),

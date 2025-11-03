@@ -228,13 +228,25 @@ export default function HomePageClient({
               className="flex h-full flex-col overflow-hidden rounded-3xl border border-foreground/10 bg-background shadow-sm"
             >
               <div className="relative aspect-[16/9] w-full overflow-hidden border-b border-foreground/10 bg-foreground/5">
-                <Image
-                  src={project.cover.src}
-                  alt={translate(locale, project.cover.alt)}
-                  fill
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  className="object-cover"
-                />
+                {project.video ? (
+                  <iframe
+                    src={project.video.embedUrl}
+                    title={translate(locale, project.video.title)}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    className="absolute inset-0 h-full w-full"
+                  />
+                ) : (
+                  <Image
+                    src={project.cover.src}
+                    alt={translate(locale, project.cover.alt)}
+                    fill
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                )}
               </div>
               <div className="flex flex-1 flex-col gap-3 p-6">
                 <div className="flex flex-wrap items-center gap-3">

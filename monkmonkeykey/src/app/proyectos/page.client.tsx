@@ -61,6 +61,16 @@ const GALLERY_TITLE = {
   en: "Gallery",
 } as const;
 
+const VIDEO_TITLE = {
+  es: "Video",
+  en: "Video",
+} as const;
+
+const VIDEO_LINK_PREFIX = {
+  es: "Ver en",
+  en: "Watch on",
+} as const;
+
 const ENTITIES_TITLE = {
   es: "Organizaciones",
   en: "Organizations",
@@ -224,6 +234,42 @@ export default function ProjectsPageClient({
                           </p>
                         ))}
                       </div>
+
+                      {project.video && (
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/50">
+                              {translate(locale, VIDEO_TITLE)}
+                            </h3>
+                            <a
+                              href={project.video.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/70 transition hover:text-foreground"
+                            >
+                              <span>
+                                {`${translate(locale, VIDEO_LINK_PREFIX)} ${
+                                  project.video.provider === "youtube"
+                                    ? "YouTube"
+                                    : "Vimeo"
+                                }`}
+                              </span>
+                              <span aria-hidden>↗</span>
+                            </a>
+                          </div>
+                          <div className="relative aspect-video overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/5">
+                            <iframe
+                              src={project.video.embedUrl}
+                              title={translate(locale, project.video.title)}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                              className="absolute inset-0 h-full w-full"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       {project.entities.length > 0 && (
                         <div className="space-y-4">
