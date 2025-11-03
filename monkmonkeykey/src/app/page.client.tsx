@@ -60,6 +60,11 @@ const HOME_CLIENTS_TITLE = {
   en: "Teams that trust us",
 } as const;
 
+const HOME_CLIENTS_WEBSITE = {
+  es: "Abrir sitio",
+  en: "Open site",
+} as const;
+
 const translateLocalizedValue = (locale: Locale, value: LocalizedValue): string =>
   typeof value === "string" ? value : value[locale];
 
@@ -306,16 +311,40 @@ export default function HomePageClient({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {clients.map((client) => (
             <article
-              key={client.name}
-              className="rounded-2xl border border-foreground/10 bg-background/80 p-4 shadow-sm"
+              key={client.slug}
+              className="flex h-full flex-col gap-4 rounded-2xl border border-foreground/10 bg-background/80 p-4 shadow-sm"
             >
-              <p className="text-sm font-semibold text-foreground/80">{client.name}</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
-                {translate(locale, client.sector)}
-              </p>
-              <p className="mt-3 text-sm text-foreground/70">
+              {client.image && (
+                <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/5">
+                  <Image
+                    src={client.image.src}
+                    alt={translate(locale, client.image.alt)}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground/80">{client.name}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
+                  {translate(locale, client.sector)}
+                </p>
+              </div>
+              <p className="text-sm text-foreground/70">
                 {translate(locale, client.summary)}
               </p>
+              {client.website && (
+                <a
+                  href={client.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-auto inline-flex w-fit items-center gap-2 text-xs font-semibold text-foreground/70 transition hover:text-foreground"
+                >
+                  <span>{translate(locale, HOME_CLIENTS_WEBSITE)}</span>
+                  <span aria-hidden>↗</span>
+                </a>
+              )}
             </article>
           ))}
         </div>

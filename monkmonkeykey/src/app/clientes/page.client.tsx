@@ -20,6 +20,11 @@ const PAGE_COPY = {
   en: "We co-design solutions with startups, scaleups, and enterprises that need to accelerate value delivery.",
 } as const;
 
+const WEBSITE_LABEL = {
+  es: "Visitar sitio",
+  en: "Visit site",
+} as const;
+
 export default function ClientsPageClient({ clients }: ClientsPageClientProps) {
   const { locale } = useLocale();
 
@@ -51,20 +56,46 @@ export default function ClientsPageClient({ clients }: ClientsPageClientProps) {
       <div className="grid gap-6 md:grid-cols-2">
         {clients.map((client) => (
           <article
-            key={client.name}
-            className="rounded-3xl border border-foreground/10 bg-background p-6 shadow-sm"
+            key={client.slug}
+            className="flex flex-col gap-5 rounded-3xl border border-foreground/10 bg-background p-6 shadow-sm"
           >
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-xl font-semibold text-foreground/90">
-                {client.name}
-              </h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-foreground/50">
-                {translate(locale, client.sector)}
-              </span>
+            {client.image && (
+              <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-foreground/10 bg-foreground/5">
+                <Image
+                  src={client.image.src}
+                  alt={translate(locale, client.image.alt)}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-xl font-semibold text-foreground/90">
+                  {client.name}
+                </h2>
+                <span className="inline-flex items-center rounded-full border border-foreground/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-foreground/50">
+                  {translate(locale, client.sector)}
+                </span>
+              </div>
+              <p className="text-sm text-foreground/70">
+                {translate(locale, client.summary)}
+              </p>
             </div>
-            <p className="mt-4 text-sm text-foreground/70">
-              {translate(locale, client.summary)}
-            </p>
+
+            {client.website && (
+              <a
+                href={client.website}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-fit items-center gap-2 rounded-full border border-foreground/10 px-4 py-2 text-xs font-semibold text-foreground/70 transition hover:border-foreground/30 hover:text-foreground"
+              >
+                <span>{translate(locale, WEBSITE_LABEL)}</span>
+                <span aria-hidden>↗</span>
+              </a>
+            )}
           </article>
         ))}
       </div>

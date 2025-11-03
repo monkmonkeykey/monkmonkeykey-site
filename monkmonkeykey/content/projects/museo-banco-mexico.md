@@ -62,6 +62,10 @@
       "The project came to life thanks to the Revueltas family, custodians of Fermín Revueltas' personal archive. The artist's unpublished materials guide the museographic narrative and highlight the modern identity of the Central Bank."
     ]
   },
+  "entities": [
+    "museo-banco-de-mexico",
+    "museo-interactivo-de-economia"
+  ],
   "meta": [
     {
       "label": {

@@ -3,17 +3,28 @@ import path from "node:path";
 
 import type { LocaleText } from "@/lib/i18n";
 
+export type ClientImage = {
+  src: string;
+  alt: LocaleText;
+};
+
 export type Client = {
+  slug: string;
   name: string;
   sector: LocaleText;
   summary: LocaleText;
+  website?: string;
+  image?: ClientImage;
 };
 
 type ClientFrontmatter = {
   order?: number;
+  slug: string;
   name: string;
   sector: LocaleText;
   summary: LocaleText;
+  website?: string;
+  image?: ClientImage;
 };
 
 const FRONTMATTER_REGEX = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*/;
@@ -39,6 +50,28 @@ const parseLocaleText = (value: unknown, field: string): LocaleText => {
   return { es, en };
 };
 
+const parseImage = (value: unknown, clientName: string): ClientImage | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (!value || typeof value !== "object") {
+    throw new Error(`Image for ${clientName} must be an object`);
+  }
+
+  const src = (value as Record<string, unknown>).src;
+  const alt = (value as Record<string, unknown>).alt;
+
+  if (typeof src !== "string" || src.length === 0) {
+    throw new Error(`Image for ${clientName} must include a src`);
+  }
+
+  return {
+    src,
+    alt: parseLocaleText(alt, `${clientName} image alt`),
+  };
+};
+
 const readClientFile = (filePath: string): { client: Client; order: number } => {
   const rawContent = fs.readFileSync(filePath, "utf8");
   const match = rawContent.match(FRONTMATTER_REGEX);
@@ -49,14 +82,21 @@ const readClientFile = (filePath: string): { client: Client; order: number } => 
 
   const frontmatter = JSON.parse(match[1].trim()) as ClientFrontmatter;
 
+  if (!frontmatter.slug) {
+    throw new Error(`Client file ${filePath} is missing a slug`);
+  }
+
   if (!frontmatter.name) {
     throw new Error(`Client file ${filePath} is missing a name`);
   }
 
   const client: Client = {
+    slug: frontmatter.slug,
     name: frontmatter.name,
     sector: parseLocaleText(frontmatter.sector, `${frontmatter.name} sector`),
     summary: parseLocaleText(frontmatter.summary, `${frontmatter.name} summary`),
+    website: frontmatter.website,
+    image: parseImage(frontmatter.image, frontmatter.name),
   };
 
   return { client, order: frontmatter.order ?? Number.MAX_SAFE_INTEGER };
@@ -67,13 +107,20 @@ const CLIENT_FILES = fs
   .filter((file) => file.endsWith(".md"))
   .map((file) => path.join(CLIENTS_DIR, file));
 
-export const CLIENTS: Client[] = CLIENT_FILES
-  .map(readClientFile)
-  .sort((a, b) => {
-    if (a.order !== b.order) {
-      return a.order - b.order;
-    }
+const CLIENT_RESULTS = CLIENT_FILES.map(readClientFile).sort((a, b) => {
+  if (a.order !== b.order) {
+    return a.order - b.order;
+  }
 
-    return a.client.name.localeCompare(b.client.name);
-  })
-  .map(({ client }) => client);
+  return a.client.name.localeCompare(b.client.name);
+});
+
+export const CLIENTS: Client[] = CLIENT_RESULTS.map(({ client }) => client);
+
+export const CLIENTS_BY_SLUG: Record<string, Client> = CLIENTS.reduce(
+  (accumulator, client) => {
+    accumulator[client.slug] = client;
+    return accumulator;
+  },
+  {} as Record<string, Client>,
+);

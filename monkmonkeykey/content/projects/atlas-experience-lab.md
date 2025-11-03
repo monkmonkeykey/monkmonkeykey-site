@@ -59,6 +59,9 @@
       "We designed a modular lab with sensory stations, real-time data panels, and collaborative tools. The team can document findings, adjust concepts, and align on decisions in a single visit."
     ]
   },
+  "entities": [
+    "atlas-labs"
+  ],
   "meta": [
     {
       "label": {

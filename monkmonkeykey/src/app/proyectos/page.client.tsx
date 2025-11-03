@@ -61,6 +61,16 @@ const GALLERY_TITLE = {
   en: "Gallery",
 } as const;
 
+const ENTITIES_TITLE = {
+  es: "Organizaciones",
+  en: "Organizations",
+} as const;
+
+const ENTITY_WEBSITE = {
+  es: "Visitar sitio",
+  en: "Visit site",
+} as const;
+
 const EMPTY_STATE = {
   es: "No hay proyectos para esta categoría todavía.",
   en: "There are no projects for this category yet.",
@@ -214,6 +224,54 @@ export default function ProjectsPageClient({
                           </p>
                         ))}
                       </div>
+
+                      {project.entities.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/50">
+                            {translate(locale, ENTITIES_TITLE)}
+                          </h3>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {project.entities.map((entity) => (
+                              <div
+                                key={`${project.slug}-${entity.slug}`}
+                                className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/5 p-4"
+                              >
+                                {entity.image && (
+                                  <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-foreground/10 bg-background">
+                                    <Image
+                                      src={entity.image.src}
+                                      alt={translate(locale, entity.image.alt)}
+                                      fill
+                                      sizes="56px"
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                )}
+                                <div className="space-y-1">
+                                  <p className="text-sm font-semibold text-foreground/80">{entity.name}</p>
+                                  <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
+                                    {translate(locale, entity.sector)}
+                                  </p>
+                                </div>
+                                <p className="text-sm text-foreground/70">
+                                  {translate(locale, entity.summary)}
+                                </p>
+                                {entity.website && (
+                                  <a
+                                    href={entity.website}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-auto inline-flex w-fit items-center gap-2 text-xs font-semibold text-foreground/70 transition hover:text-foreground"
+                                  >
+                                    <span>{translate(locale, ENTITY_WEBSITE)}</span>
+                                    <span aria-hidden>↗</span>
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="space-y-3">
                         <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground/50">

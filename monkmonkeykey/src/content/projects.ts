@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { CLIENTS_BY_SLUG } from "@/content/clients";
+import type { Client, ClientImage } from "@/content/clients";
 import type { Locale, LocaleText } from "@/lib/i18n";
 
 export type LocalizedValue = string | LocaleText;
@@ -8,6 +10,15 @@ export type LocalizedValue = string | LocaleText;
 export type ProjectGalleryImage = {
   src: string;
   alt: LocaleText;
+};
+
+export type ProjectEntity = {
+  slug: string;
+  name: string;
+  summary: LocaleText;
+  sector: LocaleText;
+  website?: string;
+  image?: ClientImage;
 };
 
 export type ProjectCategory =
@@ -42,6 +53,7 @@ export type Project = {
   gallery: ProjectGalleryImage[];
   description: LocaleText[];
   meta: { label: LocaleText; value: LocalizedValue }[];
+  entities: ProjectEntity[];
 };
 
 type ProjectFrontmatter = {
@@ -57,6 +69,7 @@ type ProjectFrontmatter = {
   gallery: ProjectGalleryImage[];
   description: Record<Locale, string[]>;
   meta: { label: LocaleText; value: LocalizedValue }[];
+  entities?: string[];
 };
 
 const FRONTMATTER_REGEX = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*/;
@@ -154,6 +167,37 @@ const parseMeta = (
   }));
 };
 
+const parseEntities = (value: unknown, projectSlug: string): ProjectEntity[] => {
+  if (!value) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Entities for ${projectSlug} must be an array`);
+  }
+
+  return value.map((entitySlug, index) => {
+    if (typeof entitySlug !== "string") {
+      throw new Error(`Entity ${index + 1} for ${projectSlug} must be a string slug`);
+    }
+
+    const client: Client | undefined = CLIENTS_BY_SLUG[entitySlug];
+
+    if (!client) {
+      throw new Error(`Project ${projectSlug} references unknown entity ${entitySlug}`);
+    }
+
+    return {
+      slug: client.slug,
+      name: client.name,
+      summary: client.summary,
+      sector: client.sector,
+      website: client.website,
+      image: client.image,
+    } satisfies ProjectEntity;
+  });
+};
+
 const readProjectFile = (filePath: string): { project: Project; order: number } => {
   const rawContent = fs.readFileSync(filePath, "utf8");
   const match = rawContent.match(FRONTMATTER_REGEX);
@@ -191,6 +235,7 @@ const readProjectFile = (filePath: string): { project: Project; order: number } 
     gallery: parseGallery(frontmatter.gallery, frontmatter.slug),
     description: parseDescription(frontmatter.description, frontmatter.slug),
     meta: parseMeta(frontmatter.meta, frontmatter.slug),
+    entities: parseEntities(frontmatter.entities, frontmatter.slug),
   };
 
   return { project, order: frontmatter.order ?? Number.MAX_SAFE_INTEGER };

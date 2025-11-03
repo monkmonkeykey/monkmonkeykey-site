@@ -60,6 +60,9 @@
       "We co-created an identity system with live prototyping tools, modular guidelines, and marketing assets. The rollout launched in six weeks with ongoing creative support."
     ]
   },
+  "entities": [
+    "loop-brand-labs"
+  ],
   "meta": [
     {
       "label": {
