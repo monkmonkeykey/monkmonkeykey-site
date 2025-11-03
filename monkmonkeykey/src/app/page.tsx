@@ -3,7 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CLIENTS } from "@/content/clients";
-import { PROJECTS } from "@/content/projects";
+import {
+  PROJECTS,
+  PROJECT_CATEGORY_LABELS,
+  translateValue,
+} from "@/content/projects";
 import { SERVICES } from "@/content/services";
 import { translate } from "@/lib/i18n";
 import { useLocale } from "@/components/site/locale-context";
@@ -203,31 +207,52 @@ export default function HomePage() {
           {PROJECTS.slice(0, 2).map((project) => (
             <article
               key={project.slug}
-              className="flex h-full flex-col rounded-3xl border border-foreground/10 bg-background p-6 shadow-sm"
+              className="flex h-full flex-col overflow-hidden rounded-3xl border border-foreground/10 bg-background shadow-sm"
             >
-              <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
-                {project.client}
-              </p>
-              <h3 className="mt-3 text-xl font-semibold">
-                {translate(locale, project.title)}
-              </h3>
-              <p className="mt-4 text-sm text-foreground/70">
-                {translate(locale, project.challenge)}
-              </p>
-              <p className="mt-2 text-sm text-foreground/70">
-                {translate(locale, project.approach)}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-foreground/80">
-                {translate(locale, project.impact)}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-foreground/60">
-                {project.tags.map((tag) => (
-                  <span key={tag} className="rounded-full border border-foreground/10 px-3 py-1">
-                    {tag}
-                  </span>
-                ))}
+              <div className="relative aspect-[16/9] w-full overflow-hidden border-b border-foreground/10 bg-foreground/5">
+                <Image
+                  src={project.cover.src}
+                  alt={translate(locale, project.cover.alt)}
+                  fill
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="object-cover"
+                />
               </div>
-              <div className="mt-auto pt-6">
+              <div className="flex flex-1 flex-col gap-3 p-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs uppercase tracking-[0.2em] text-foreground/50">
+                    {translateValue(locale, project.client)}
+                  </p>
+                  <span className="inline-flex items-center rounded-full border border-foreground/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-foreground/50">
+                    {project.year}
+                  </span>
+                </div>
+                <h3 className="text-xl font-semibold">
+                  {translate(locale, project.name)}
+                </h3>
+                <p className="text-sm text-foreground/70">
+                  {translate(locale, project.subtitle)}
+                </p>
+                <p className="text-sm text-foreground/70">
+                  {translate(locale, project.description[0])}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-foreground/60">
+                  {project.categories.map((category) => (
+                    <span
+                      key={`${project.slug}-cat-${category}`}
+                      className="rounded-full border border-foreground/10 px-3 py-1"
+                    >
+                      {translate(locale, PROJECT_CATEGORY_LABELS[category])}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-auto pt-4">
+                  <span className="text-xs uppercase tracking-[0.2em] text-foreground/40">
+                    {translateValue(locale, project.location)}
+                  </span>
+                </div>
+              </div>
+              <div className="border-t border-foreground/10 bg-foreground/5 px-6 py-4">
                 <Link
                   href={`/proyectos#${project.slug}`}
                   className="text-sm font-semibold text-foreground/80 transition hover:text-foreground"
