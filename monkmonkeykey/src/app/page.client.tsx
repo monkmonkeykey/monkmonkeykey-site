@@ -21,12 +21,12 @@ type HomePageClientProps = {
 };
 
 const HERO_HEADLINE = {
-  es: "Un socio estratégico para escalar tus productos digitales",
+  es: "Desarrollamos proyectos de arte y cultura desde una práctica técnica y sensible.",
   en: "A strategic partner to scale your digital products",
 } as const;
 
 const HERO_SUBTITLE = {
-  es: "Unimos estrategia, diseño y growth para que cada release conecte con tus objetivos de negocio.",
+  es: "Entendemos los procesos, contextos y cuidados que cada producción requiere. Nuestra experiencia en artes digitales y electrónicas nos permite atender con precisión las particularidades técnicas y estéticas de cada proyecto.",
   en: "We combine strategy, design, and growth so every release matches your business goals.",
 } as const;
 

@@ -24,7 +24,7 @@ export function Header() {
     <header className="border-b border-foreground/10 bg-background/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6 lg:py-4">
         <Link href="/" className="font-semibold tracking-tight">
-          MonkMonkeyKey
+          monkmonkeykey.studio
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm lg:flex">

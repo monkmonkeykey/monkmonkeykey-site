@@ -21,7 +21,7 @@
     "en": "Mexico City"
   },
   "cover": {
-    "src": "/projects/museo-banco-mexico/cover.svg",
+    "src": "https://res.cloudinary.com/dmrzmnjln/image/upload/v1743526127/website/projects/comision-produccion-obra/f8vccuxzhen5qlt3dfns.jpg",
     "alt": {
       "es": "Visualización abstracta de paneles informativos del Museo del Banco de México",
       "en": "Abstract visualisation of the Bank of Mexico Museum exhibition panels"
@@ -62,10 +62,6 @@
       "The project came to life thanks to the Revueltas family, custodians of Fermín Revueltas' personal archive. The artist's unpublished materials guide the museographic narrative and highlight the modern identity of the Central Bank."
     ]
   },
-  "entities": [
-    "museo-banco-de-mexico",
-    "museo-interactivo-de-economia"
-  ],
   "meta": [
     {
       "label": {
