@@ -14,6 +14,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ClientStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model Asset {
   id               String   @id @default(cuid())
   publicId         String   @unique
@@ -29,4 +35,29 @@ model Asset {
   metadata         Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model Client {
+  id               String        @id @default(cuid())
+  name             String
+  slug             String        @unique
+  tagline          String?
+  summary          String?
+  description      String?
+  website          String?
+  email            String?
+  phone            String?
+  contactName      String?
+  contactEmail     String?
+  contactPhone     String?
+  logoPublicId     String?
+  heroPublicId     String?
+  galleryPublicIds String[]      @default([])
+  tags             String[]      @default([])
+  order            Int?
+  status           ClientStatus  @default(DRAFT)
+  metadata         Json?
+  rawPayload       Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 }
