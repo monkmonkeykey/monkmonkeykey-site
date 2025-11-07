@@ -13,3 +13,20 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Asset {
+  id               String   @id @default(cuid())
+  publicId         String   @unique
+  secureUrl        String
+  originalFilename String?
+  resourceType     String?
+  folder           String?
+  format           String?
+  bytes            Int
+  width            Int?
+  height           Int?
+  label            String?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
