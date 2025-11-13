@@ -69,9 +69,27 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
   }
 
   if (!mongoClientPromise) {
-    mongoClient = new mongodb.MongoClient(env.mongodbUri, {
+    const options: Record<string, unknown> = {
       maxPoolSize: 5,
-    });
+    };
+
+    if (env.mongodbTls) {
+      options.tls = true;
+    }
+
+    if (env.mongodbTlsAllowInvalidCertificates) {
+      options.tlsAllowInvalidCertificates = true;
+    }
+
+    if (env.mongodbTlsAllowInvalidHostnames) {
+      options.tlsAllowInvalidHostnames = true;
+    }
+
+    if (env.mongodbTlsCaFile) {
+      options.tlsCAFile = env.mongodbTlsCaFile;
+    }
+
+    mongoClient = new mongodb.MongoClient(env.mongodbUri, options);
     mongoClientPromise = mongoClient.connect().then((client) => {
       mongoClient = client;
       return client;

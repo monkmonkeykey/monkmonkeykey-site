@@ -26,6 +26,10 @@ Sitio institucional construido con Next.js 16 y el App Router. Carga contenido b
 | --- | --- |
 | `MONGODB_URI` | Cadena de conexión a tu clúster de MongoDB Atlas o instancia propia. |
 | `MONGODB_DB` | Nombre de la base de datos donde se guardarán clientes y proyectos. |
+| `MONGODB_TLS` | Forzar conexiones TLS cuando tu servidor no lo exige por defecto (por ejemplo, instancias locales). |
+| `MONGODB_TLS_ALLOW_INVALID_CERTIFICATES` | Permitir certificados TLS no válidos (útil para entornos de prueba con CA propia). |
+| `MONGODB_TLS_ALLOW_INVALID_HOSTNAMES` | Omitir la validación de hostname en el certificado TLS. |
+| `MONGODB_TLS_CA_FILE` | Ruta absoluta al archivo CA que firmó el certificado del servidor MongoDB. |
 | `ADMIN_PASSWORD` | Contraseña que usarás para acceder al panel administrativo. |
 | `ADMIN_SESSION_SECRET` | Cadena aleatoria larga para firmar las sesiones del panel. |
 | `CLOUDINARY_CLOUD_NAME` | Cloud name de tu cuenta de Cloudinary. |
