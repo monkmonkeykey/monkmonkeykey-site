@@ -1,8 +1,26 @@
 const normalize = (value: string | undefined): string => value?.trim() ?? "";
 
+const normalizeBoolean = (value: string | undefined): boolean => {
+  const normalized = normalize(value).toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return ["1", "true", "yes", "on"].includes(normalized);
+};
+
 export const env = {
   mongodbUri: normalize(process.env.MONGODB_URI),
   mongodbDb: normalize(process.env.MONGODB_DB),
+  mongodbTls: normalizeBoolean(process.env.MONGODB_TLS),
+  mongodbTlsAllowInvalidCertificates: normalizeBoolean(
+    process.env.MONGODB_TLS_ALLOW_INVALID_CERTIFICATES,
+  ),
+  mongodbTlsAllowInvalidHostnames: normalizeBoolean(
+    process.env.MONGODB_TLS_ALLOW_INVALID_HOSTNAMES,
+  ),
+  mongodbTlsCaFile: normalize(process.env.MONGODB_TLS_CA_FILE),
   cloudinaryCloudName: normalize(process.env.CLOUDINARY_CLOUD_NAME),
   cloudinaryApiKey: normalize(process.env.CLOUDINARY_API_KEY),
   cloudinaryApiSecret: normalize(process.env.CLOUDINARY_API_SECRET),
