@@ -34,6 +34,7 @@ let mongoModule: MongoModule | null | undefined;
 let mongoClientPromise: Promise<MongoClientInstance> | null = null;
 let mongoClient: MongoClientInstance | null = null;
 let warnedMissingDriver = false;
+let warnedConnectionFailure = false;
 
 const loadMongoModule = (): MongoModule | null => {
   if (mongoModule !== undefined) {
@@ -78,9 +79,25 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     });
   }
 
-  const client = await mongoClientPromise;
-  mongoClient = client;
-  return client;
+  try {
+    const client = await mongoClientPromise;
+    mongoClient = client;
+    return client;
+  } catch (error) {
+    mongoClientPromise = null;
+    mongoClient = null;
+
+    if (!warnedConnectionFailure) {
+      warnedConnectionFailure = true;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown MongoDB connection error";
+      console.error(
+        `Failed to connect to MongoDB. Falling back to Markdown content. Error: ${errorMessage}`,
+      );
+    }
+
+    return null;
+  }
 };
 
 export const getMongoDatabase = async (): Promise<MongoDatabase | null> => {
