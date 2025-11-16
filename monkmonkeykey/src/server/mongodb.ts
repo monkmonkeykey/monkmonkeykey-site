@@ -30,6 +30,11 @@ type MongoModule = {
   MongoClient: new (uri: string, options?: Record<string, unknown>) => MongoClientInstance;
 };
 
+const dynamicImport = new Function(
+  "specifier",
+  "return import(specifier);",
+) as <TModule>(specifier: string) => Promise<TModule>;
+
 let mongoModule: MongoModule | null | undefined;
 let mongoModulePromise: Promise<MongoModule | null> | null = null;
 let mongoClientPromise: Promise<MongoClientInstance> | null = null;
@@ -45,7 +50,7 @@ const loadMongoModule = async (): Promise<MongoModule | null> => {
   }
 
   if (!mongoModulePromise) {
-    mongoModulePromise = import(/* webpackIgnore: true */ "mongodb")
+    mongoModulePromise = dynamicImport<MongoModule>("mongodb")
       .then((module) => {
         mongoModule = module as MongoModule;
         return mongoModule;
