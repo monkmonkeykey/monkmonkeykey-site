@@ -3,6 +3,7 @@ import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || "monkmonkeykey";
+const clientsCollection = process.env.MONGODB_CLIENTS_COLLECTION || "clients";
 
 if (!uri) {
   console.error("[mongo-smoke-test] Define MONGODB_URI para ejecutar la prueba.");
@@ -32,7 +33,7 @@ async function main() {
     console.log(`[mongo-smoke-test] Conectado en ${Date.now() - start}ms`);
 
     const db = client.db(dbName);
-    const collection = db.collection("clients");
+    const collection = db.collection(clientsCollection);
 
     await collection.insertOne(payload);
     console.log(`[mongo-smoke-test] Insertado documento con slug ${slug}`);

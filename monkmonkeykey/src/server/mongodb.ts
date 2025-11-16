@@ -38,11 +38,63 @@ const dynamicImport = new Function(
 let mongoModule: MongoModule | null | undefined;
 let mongoModulePromise: Promise<MongoModule | null> | null = null;
 let mongoClientPromise: Promise<MongoClientInstance> | null = null;
-let mongoClient: MongoClientInstance | null = null;
 let warnedMissingDriver = false;
 let warnedConnectionFailure = false;
 const RETRY_DELAY_MS = 5 * 60 * 1000;
 let nextRetryTimestamp = 0;
+let activeMongoUri: string | null = null;
+
+const buildSrvFallbackUri = (uri: string): string | null => {
+  if (!uri.startsWith("mongodb+srv://")) {
+    return null;
+  }
+
+  try {
+    const fallbackUri = uri.replace("mongodb+srv://", "mongodb://");
+    const parsed = new URL(fallbackUri);
+
+    if (!parsed.searchParams.has("directConnection")) {
+      parsed.searchParams.set("directConnection", "true");
+    }
+
+    if (!parsed.searchParams.has("tls")) {
+      parsed.searchParams.set("tls", "true");
+    }
+
+    return parsed.toString();
+  } catch (error) {
+    console.warn("[MongoDB] No fue posible preparar el URI alterno:", error);
+    return null;
+  }
+};
+
+const srvFallbackUri = buildSrvFallbackUri(env.mongodbUri);
+
+const shouldRetryWithSrvFallback = (error: unknown): boolean => {
+  if (!(error instanceof Error) || typeof error.message !== "string") {
+    return false;
+  }
+
+  const normalized = error.message.toLowerCase();
+  return (
+    normalized.includes("querysrv") ||
+    normalized.includes("enodata") ||
+    normalized.includes("erefused") ||
+    normalized.includes("enotfound")
+  );
+};
+
+const connectWithUri = async (mongodb: MongoModule, uri: string): Promise<MongoClientInstance> => {
+  const clientInstance = new mongodb.MongoClient(uri, {
+    maxPoolSize: 5,
+    serverSelectionTimeoutMS: 5000,
+  });
+
+  const connectedClient = await clientInstance.connect();
+  activeMongoUri = uri;
+  warnedConnectionFailure = false;
+  return connectedClient;
+};
 
 const loadMongoModule = async (): Promise<MongoModule | null> => {
   if (mongoModule !== undefined) {
@@ -93,22 +145,28 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
   }
 
   if (!mongoClientPromise) {
-    mongoClient = new mongodb.MongoClient(env.mongodbUri, {
-      maxPoolSize: 5,
-    });
-    mongoClientPromise = mongoClient.connect().then((client) => {
-      mongoClient = client;
-      return client;
+    const initialUri = activeMongoUri ?? env.mongodbUri;
+    mongoClientPromise = connectWithUri(mongodb, initialUri).catch(async (error) => {
+      if (
+        srvFallbackUri &&
+        initialUri === env.mongodbUri &&
+        shouldRetryWithSrvFallback(error)
+      ) {
+        console.warn(
+          "[MongoDB] Error al resolver el registro SRV. Reintentando con conexión directa...",
+        );
+        return connectWithUri(mongodb, srvFallbackUri);
+      }
+
+      throw error;
     });
   }
 
   try {
     const client = await mongoClientPromise;
-    mongoClient = client;
     return client;
   } catch (error) {
     mongoClientPromise = null;
-    mongoClient = null;
     nextRetryTimestamp = Date.now() + RETRY_DELAY_MS;
 
     if (!warnedConnectionFailure) {
