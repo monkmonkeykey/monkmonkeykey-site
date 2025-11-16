@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Client, ClientKind } from "@/content/clients";
@@ -39,6 +40,30 @@ type ProjectDescriptionField = {
 type ProjectVideoField = {
   url: string;
   title: LocaleField;
+};
+
+type CloudinaryAsset = {
+  id: string;
+  publicId: string;
+  folder: string;
+  url: string;
+  thumbnailUrl: string;
+  bytes: number;
+  width: number;
+  height: number;
+  format: string;
+  createdAt: string;
+};
+
+type CloudinaryPickerOptions = {
+  folder?: string;
+  onSelect: (asset: CloudinaryAsset) => void;
+};
+
+type CloudinaryPickerState = {
+  open: boolean;
+  folder?: string;
+  onSelect?: (asset: CloudinaryAsset) => void;
 };
 
 const CLIENT_KINDS: { value: ClientKind; label: string }[] = [
@@ -147,12 +172,210 @@ const uploadToCloudinary = async (file: File, folder: string) => {
   return payload;
 };
 
+const formatFileSize = (bytes: number): string => {
+  if (!bytes || Number.isNaN(bytes)) {
+    return "0 B";
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** exponent;
+
+  return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+};
+
+const CloudinaryLibraryDialog = ({
+  isOpen,
+  folder,
+  onSelect,
+  onClose,
+}: {
+  isOpen: boolean;
+  folder?: string;
+  onSelect?: (asset: CloudinaryAsset) => void;
+  onClose: () => void;
+}) => {
+  const [assets, setAssets] = useState<CloudinaryAsset[]>([]);
+  const [status, setStatus] = useState<"idle" | "loading">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
+  const fetchAssets = useCallback(
+    async (cursor?: string, replace = false) => {
+      if (!isOpen) {
+        return;
+      }
+
+      setStatus("loading");
+      setError(null);
+
+      try {
+        const params = new URLSearchParams();
+        params.set("maxResults", "30");
+
+        if (folder?.trim()) {
+          params.set("folder", folder.trim());
+        }
+
+        if (cursor) {
+          params.set("nextCursor", cursor);
+        }
+
+        const endpoint = `/api/cloudinary/library?${params.toString()}`;
+        const response = await fetch(endpoint, { credentials: "include" });
+        const text = await response.text();
+        let payload: { assets?: CloudinaryAsset[]; nextCursor?: string | null; error?: unknown } = {};
+
+        if (text.length > 0) {
+          try {
+            payload = JSON.parse(text) as typeof payload;
+          } catch {
+            payload = {};
+          }
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            extractApiErrorMessage(payload, "No fue posible cargar las imágenes de Cloudinary"),
+          );
+        }
+
+        setAssets((previous) => (replace ? payload.assets ?? [] : [...previous, ...(payload.assets ?? [])]));
+        setNextCursor(payload.nextCursor ?? null);
+        setStatus("idle");
+      } catch (error) {
+        console.error(error);
+        setStatus("idle");
+        setError(
+          error instanceof Error ? error.message : "No fue posible cargar las imágenes de Cloudinary",
+        );
+      }
+    },
+    [folder, isOpen],
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      setAssets([]);
+      setError(null);
+      setNextCursor(null);
+      setStatus("idle");
+      return;
+    }
+
+    void fetchAssets(undefined, true);
+  }, [fetchAssets, isOpen]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="relative w-full max-w-5xl space-y-5 rounded-3xl bg-background p-6 shadow-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Biblioteca de Cloudinary</h3>
+            <p className="text-sm text-foreground/60">
+              Selecciona una imagen existente{folder ? ` en “${folder}”` : ""} o carga un nuevo archivo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-foreground/15 px-4 py-1 text-sm font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        {error && (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {assets.map((asset) => (
+            <button
+              key={asset.id}
+              type="button"
+              onClick={() => {
+                onSelect?.(asset);
+                onClose();
+              }}
+              className="group rounded-2xl border border-foreground/10 text-left transition hover:border-foreground/50"
+            >
+              <div className="overflow-hidden rounded-t-2xl bg-foreground/5">
+                <Image
+                  src={asset.thumbnailUrl || asset.url}
+                  alt={asset.publicId}
+                  width={640}
+                  height={360}
+                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  className="h-48 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                />
+              </div>
+              <div className="space-y-1 px-4 py-3 text-xs text-foreground/70">
+                <p className="truncate text-sm font-semibold text-foreground" title={asset.publicId}>
+                  {asset.publicId}
+                </p>
+                <p className="truncate" title={asset.folder}>
+                  {asset.folder || "(raíz)"}
+                </p>
+                <p>
+                  {asset.format.toUpperCase()} · {asset.width}×{asset.height} · {formatFileSize(asset.bytes)}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {assets.length === 0 && status === "idle" && !error && (
+          <p className="rounded-2xl border border-foreground/10 bg-foreground/5 px-4 py-3 text-sm text-foreground/60">
+            No se encontraron imágenes en esta carpeta.
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-foreground/60">
+          <span>
+            {status === "loading"
+              ? "Cargando imágenes…"
+              : assets.length > 0
+                ? `${assets.length} archivo${assets.length === 1 ? "" : "s"}`
+                : "Sin resultados"}
+          </span>
+
+          <div className="flex gap-3">
+            {nextCursor && (
+              <button
+                type="button"
+                onClick={() => void fetchAssets(nextCursor)}
+                className="rounded-full border border-foreground/15 px-4 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+              >
+                Cargar más
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-foreground/15 px-4 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ClientManager = ({
   clients,
   cloudinaryReady,
+  openCloudinaryPicker,
 }: {
   clients: Client[];
   cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
 }) => {
   const router = useRouter();
   const [selectedSlug, setSelectedSlug] = useState<string>("new");
@@ -482,6 +705,30 @@ const ClientManager = ({
                   Subir desde Cloudinary
                 </label>
               )}
+              {cloudinaryReady && openCloudinaryPicker && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openCloudinaryPicker({
+                      folder: form.slug.trim() ? `clients/${form.slug.trim()}` : "clients",
+                      onSelect: (asset) => {
+                        setForm((previous) => ({
+                          ...previous,
+                          image: {
+                            ...previous.image,
+                            publicId: asset.publicId,
+                            src: asset.url,
+                          },
+                        }));
+                        setMessage("Imagen asignada desde Cloudinary");
+                      },
+                    })
+                  }
+                  className="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-4 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                >
+                  Elegir existente
+                </button>
+              )}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -585,10 +832,12 @@ const ProjectManager = ({
   projects,
   clients,
   cloudinaryReady,
+  openCloudinaryPicker,
 }: {
   projects: Project[];
   clients: Client[];
   cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
 }) => {
   const router = useRouter();
   const [selectedSlug, setSelectedSlug] = useState<string>("new");
@@ -1056,6 +1305,30 @@ const ProjectManager = ({
                   Subir portada
                 </label>
               )}
+              {cloudinaryReady && openCloudinaryPicker && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openCloudinaryPicker({
+                      folder: form.slug.trim() ? `projects/${form.slug.trim()}` : "projects",
+                      onSelect: (asset) => {
+                        setForm((previous) => ({
+                          ...previous,
+                          cover: {
+                            ...previous.cover,
+                            publicId: asset.publicId,
+                            src: asset.url,
+                          },
+                        }));
+                        setMessage("Portada actualizada desde Cloudinary");
+                      },
+                    })
+                  }
+                  className="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-4 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                >
+                  Elegir existente
+                </button>
+              )}
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -1182,6 +1455,30 @@ const ProjectManager = ({
                           />
                           Subir
                         </label>
+                      )}
+                      {cloudinaryReady && openCloudinaryPicker && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openCloudinaryPicker({
+                              folder: form.slug.trim() ? `projects/${form.slug.trim()}/gallery` : "projects",
+                              onSelect: (asset) => {
+                                setForm((previous) => ({
+                                  ...previous,
+                                  gallery: previous.gallery.map((item) =>
+                                    item.id === image.id
+                                      ? { ...item, publicId: asset.publicId, src: asset.url }
+                                      : item,
+                                  ),
+                                }));
+                                setMessage("Imagen de galería actualizada desde Cloudinary");
+                              },
+                            })
+                          }
+                          className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                        >
+                          Elegir existente
+                        </button>
                       )}
                       <button
                         type="button"
@@ -1613,6 +1910,16 @@ const AdminDashboard = ({
   databaseReady,
   cloudinaryReady,
 }: AdminDashboardProps) => {
+  const [picker, setPicker] = useState<CloudinaryPickerState>({ open: false });
+
+  const closePicker = useCallback(() => {
+    setPicker((previous) => ({ ...previous, open: false }));
+  }, []);
+
+  const openPicker = useCallback((options: CloudinaryPickerOptions) => {
+    setPicker({ open: true, folder: options.folder, onSelect: options.onSelect });
+  }, []);
+
   return (
     <div className="space-y-12">
       {!databaseReady && (
@@ -1629,8 +1936,26 @@ const AdminDashboard = ({
         </div>
       )}
 
-      <ClientManager clients={clients} cloudinaryReady={cloudinaryReady} />
-      <ProjectManager projects={projects} clients={clients} cloudinaryReady={cloudinaryReady} />
+      <ClientManager
+        clients={clients}
+        cloudinaryReady={cloudinaryReady}
+        openCloudinaryPicker={cloudinaryReady ? openPicker : undefined}
+      />
+      <ProjectManager
+        projects={projects}
+        clients={clients}
+        cloudinaryReady={cloudinaryReady}
+        openCloudinaryPicker={cloudinaryReady ? openPicker : undefined}
+      />
+
+      <CloudinaryLibraryDialog
+        isOpen={cloudinaryReady && picker.open}
+        folder={picker.folder}
+        onSelect={(asset) => {
+          picker.onSelect?.(asset);
+        }}
+        onClose={closePicker}
+      />
     </div>
   );
 };
