@@ -1,4 +1,5 @@
 import type { Client, ClientKind, ClientImage } from "@/content/clients";
+import { env } from "@/lib/env";
 import { buildCloudinaryImageUrl } from "@/server/cloudinary";
 import { getMongoDatabase } from "@/server/mongodb";
 
@@ -64,14 +65,22 @@ const normalizeClient = (document: ClientDocument): Client => {
   } satisfies Client;
 };
 
-export const fetchClientsFromDatabase = async (): Promise<Client[] | null> => {
+const getClientsCollection = async () => {
   const db = await getMongoDatabase();
 
   if (!db) {
     return null;
   }
 
-  const collection = db.collection<ClientDocument>("clients");
+  return db.collection<ClientDocument>(env.mongodbClientsCollection);
+};
+
+export const fetchClientsFromDatabase = async (): Promise<Client[] | null> => {
+  const collection = await getClientsCollection();
+
+  if (!collection) {
+    return null;
+  }
 
   const documents = await collection
     .find({}, { projection: { _id: 0 } })
@@ -82,13 +91,11 @@ export const fetchClientsFromDatabase = async (): Promise<Client[] | null> => {
 };
 
 export const fetchClientBySlug = async (slug: string): Promise<Client | null> => {
-  const db = await getMongoDatabase();
+  const collection = await getClientsCollection();
 
-  if (!db) {
+  if (!collection) {
     return null;
   }
-
-  const collection = db.collection<ClientDocument>("clients");
 
   const document = await collection.findOne({ slug }, { projection: { _id: 0 } });
 
@@ -116,13 +123,11 @@ const prepareClientDocument = (payload: ClientPayload) => {
 };
 
 export const upsertClient = async (payload: ClientPayload): Promise<Client | null> => {
-  const db = await getMongoDatabase();
+  const collection = await getClientsCollection();
 
-  if (!db) {
+  if (!collection) {
     return null;
   }
-
-  const collection = db.collection<ClientDocument>("clients");
 
   const document = prepareClientDocument(payload);
 
@@ -141,26 +146,22 @@ export const upsertClient = async (payload: ClientPayload): Promise<Client | nul
 };
 
 export const deleteClient = async (slug: string): Promise<boolean> => {
-  const db = await getMongoDatabase();
+  const collection = await getClientsCollection();
 
-  if (!db) {
+  if (!collection) {
     return false;
   }
-
-  const collection = db.collection<ClientDocument>("clients");
 
   const result = await collection.deleteOne({ slug });
   return (result.deletedCount ?? 0) > 0;
 };
 
 export const ensureClientIndexes = async (): Promise<void> => {
-  const db = await getMongoDatabase();
+  const collection = await getClientsCollection();
 
-  if (!db) {
+  if (!collection) {
     return;
   }
-
-  const collection = db.collection<ClientDocument>("clients");
 
   await collection.createIndex({ slug: 1 }, { unique: true });
   await collection.createIndex({ order: 1, name: 1 });

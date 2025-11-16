@@ -26,6 +26,7 @@ Sitio institucional construido con Next.js 16 y el App Router. Carga contenido b
 | --- | --- |
 | `MONGODB_URI` | Cadena de conexión a tu clúster de MongoDB Atlas o instancia propia. |
 | `MONGODB_DB` | Nombre de la base de datos donde se guardarán clientes y proyectos. |
+| `MONGODB_CLIENTS_COLLECTION` | (Opcional) Nombre de la colección donde se almacenan los clientes; por defecto `clients`. |
 | `ADMIN_PASSWORD` | Contraseña que usarás para acceder al panel administrativo. |
 | `ADMIN_SESSION_SECRET` | Cadena aleatoria larga para firmar las sesiones del panel. |
 | `CLOUDINARY_CLOUD_NAME` | Cloud name de tu cuenta de Cloudinary. |
@@ -55,8 +56,8 @@ Para cerrar sesión usa el botón “Cerrar sesión” dentro del panel o borra 
   MONGODB_URI="mongodb+srv://..." MONGODB_DB="monkmonkeykeydata" \\
     node scripts/mongodb-smoke-test.mjs
   ```
-  El script insertará un registro temporal en la colección `clients`, lo leerá y lo borrará. Si ves errores de `querySrv` o SSL
-  aquí, debes resolverlos en Atlas/VPC antes de volver a usar el panel.
+  El script insertará un registro temporal en la colección definida por `MONGODB_CLIENTS_COLLECTION` (o `clients` si no lo cambiaste),
+  lo leerá y lo borrará. Si ves errores de `querySrv` o SSL aquí, debes resolverlos en Atlas/VPC antes de volver a usar el panel.
 - Tras iniciar sesión en `/admin/login`, puedes probar manualmente el endpoint de creación desde la terminal copiando la cookie `mmk_admin_session` del navegador:
   ```bash
   curl -X POST http://localhost:3000/api/clients \
