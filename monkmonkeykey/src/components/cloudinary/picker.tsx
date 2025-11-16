@@ -154,7 +154,7 @@ export const CloudinaryLibraryDialog = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-      <div className="relative w-full max-w-5xl space-y-5 rounded-3xl bg-background p-6 shadow-2xl">
+      <div className="relative flex max-h-[90vh] w-full max-w-5xl flex-col space-y-5 overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-foreground">Biblioteca de Cloudinary</h3>
