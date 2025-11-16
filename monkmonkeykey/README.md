@@ -42,6 +42,7 @@ Si no configuras MongoDB, el sitio seguirá leyendo los archivos Markdown de `co
    - Crear, actualizar y eliminar proyectos, incluidas galerías de imágenes, metadatos y videos opcionales de YouTube/Vimeo.
    - Subir medios a Cloudinary directamente desde los formularios (si las credenciales están presentes).
    - Elegir imágenes existentes de tu biblioteca de Cloudinary gracias al explorador integrado con búsqueda por carpeta.
+   - Abrir la biblioteca de Cloudinary desde la pantalla de login para copiar URLs seguras aun antes de autenticarse.
 4. Los cambios se guardan en MongoDB; el sitio público los mostrará tras recargar o al reconstruir.
 
 > **Nota:** sin MongoDB el panel sólo mostrará el contenido existente en los Markdown, pero no permitirá guardar cambios.
