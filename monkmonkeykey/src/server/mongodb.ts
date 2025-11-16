@@ -36,6 +36,8 @@ let mongoClientPromise: Promise<MongoClientInstance> | null = null;
 let mongoClient: MongoClientInstance | null = null;
 let warnedMissingDriver = false;
 let warnedConnectionFailure = false;
+const RETRY_DELAY_MS = 5 * 60 * 1000;
+let nextRetryTimestamp = 0;
 
 const loadMongoModule = async (): Promise<MongoModule | null> => {
   if (mongoModule !== undefined) {
@@ -75,6 +77,10 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     return null;
   }
 
+  if (nextRetryTimestamp > Date.now()) {
+    return null;
+  }
+
   const mongodb = await loadMongoModule();
 
   if (!mongodb) {
@@ -98,6 +104,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
   } catch (error) {
     mongoClientPromise = null;
     mongoClient = null;
+    nextRetryTimestamp = Date.now() + RETRY_DELAY_MS;
 
     if (!warnedConnectionFailure) {
       warnedConnectionFailure = true;
