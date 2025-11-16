@@ -37,7 +37,13 @@ export async function POST(request: Request) {
   const parseResult = clientPayloadSchema.safeParse(payload);
 
   if (!parseResult.success) {
-    return NextResponse.json({ error: parseResult.error.flatten() }, { status: 400 });
+    const [firstIssue] = parseResult.error.issues;
+    const fieldPath = firstIssue?.path.join(".");
+    const errorMessage = fieldPath
+      ? `${fieldPath}: ${firstIssue?.message ?? "Invalid request"}`
+      : firstIssue?.message ?? "Invalid request";
+
+    return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
   const client = await upsertClient(parseResult.data);
