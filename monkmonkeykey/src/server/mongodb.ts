@@ -45,7 +45,7 @@ const loadMongoModule = async (): Promise<MongoModule | null> => {
   }
 
   if (!mongoModulePromise) {
-    mongoModulePromise = import("mongodb")
+    mongoModulePromise = import(/* webpackIgnore: true */ "mongodb")
       .then((module) => {
         mongoModule = module as MongoModule;
         return mongoModule;
