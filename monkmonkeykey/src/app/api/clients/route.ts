@@ -49,7 +49,13 @@ export async function POST(request: Request) {
   const client = await upsertClient(parseResult.data);
 
   if (!client) {
-    return NextResponse.json({ error: "Failed to save client" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "No fue posible conectarse con MongoDB para guardar el cliente. Revisa las credenciales y el acceso de red.",
+      },
+      { status: 500 },
+    );
   }
 
   await refreshClientsCache();

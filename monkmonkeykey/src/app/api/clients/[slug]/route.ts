@@ -64,7 +64,13 @@ export async function PATCH(request: Request, context: RouteContext) {
   const client = await upsertClient(parseResult.data);
 
   if (!client) {
-    return NextResponse.json({ error: "Failed to save client" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "No fue posible conectarse con MongoDB para guardar el cliente. Revisa las credenciales y el acceso de red.",
+      },
+      { status: 500 },
+    );
   }
 
   await refreshClientsCache();
@@ -90,7 +96,12 @@ export async function DELETE(request: Request, context: RouteContext) {
   const success = await deleteClient(params.slug);
 
   if (!success) {
-    return NextResponse.json({ error: "Failed to delete client" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "No fue posible conectarse con MongoDB para eliminar el cliente. Revisa las credenciales y el acceso de red.",
+      },
+      { status: 500 },
+    );
   }
 
   await refreshClientsCache();

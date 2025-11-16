@@ -47,6 +47,31 @@ Si no configuras MongoDB, el sitio seguirá leyendo los archivos Markdown de `co
 
 Para cerrar sesión usa el botón “Cerrar sesión” dentro del panel o borra la cookie `mmk_admin_session`.
 
+## Depuración rápida de MongoDB
+- Ejecuta un smoke test directo contra tu clúster para comprobar que las credenciales y la red funcionan:
+  ```bash
+  MONGODB_URI="mongodb+srv://..." MONGODB_DB="monkmonkeykeydata" \\
+    node scripts/mongodb-smoke-test.mjs
+  ```
+  El script insertará un registro temporal en la colección `clients`, lo leerá y lo borrará. Si ves errores de `querySrv` o SSL
+  aquí, debes resolverlos en Atlas/VPC antes de volver a usar el panel.
+- Tras iniciar sesión en `/admin/login`, puedes probar manualmente el endpoint de creación desde la terminal copiando la cookie `mmk_admin_session` del navegador:
+  ```bash
+  curl -X POST http://localhost:3000/api/clients \
+    -H "Content-Type: application/json" \
+    -H "Cookie: mmk_admin_session=PEGA_AQUI_TU_COOKIE" \
+    -d '{
+      "slug": "cliente-demo",
+      "name": "Cliente demo",
+      "kind": "client",
+      "sector": { "es": "Tecnología", "en": "Technology" },
+      "summary": { "es": "Ejemplo cargado desde curl", "en": "Example created via curl" },
+      "website": "https://example.org"
+    }'
+  ```
+  La respuesta debe devolverte el mismo JSON con estado `200`. Si ves un `401` revisa la cookie; si aparece un mensaje sobre MongoDB,
+  significa que el servidor no consigue abrir la conexión y el administrador mostrará el mismo error legible en pantalla en lugar de `[object Object]`.
+
 ## Scripts disponibles
 - `npm run dev`: inicia el servidor de desarrollo.
 - `npm run build`: genera el build de producción.

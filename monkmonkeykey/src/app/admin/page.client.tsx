@@ -94,6 +94,35 @@ const imageHasData = (image: ImageField): boolean =>
 
 const randomId = () => Math.random().toString(36).slice(2, 10);
 
+const extractApiErrorMessage = (payload: unknown, fallback: string): string => {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const { error } = payload as { error?: unknown };
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return error;
+  }
+
+  if (typeof error === "number" || typeof error === "boolean") {
+    return String(error);
+  }
+
+  if (typeof error === "object" && error !== null) {
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== "{}") {
+        return serialized;
+      }
+    } catch {
+      // Ignore JSON serialization failures.
+    }
+  }
+
+  return fallback;
+};
+
 const uploadToCloudinary = async (file: File, folder: string) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -110,7 +139,7 @@ const uploadToCloudinary = async (file: File, folder: string) => {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? "Cloudinary rechazó la carga");
+    throw new Error(extractApiErrorMessage(data, "Cloudinary rechazó la carga"));
   }
 
   const payload = (await response.json()) as { publicId: string; src: string };
@@ -216,7 +245,7 @@ const ClientManager = ({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "No fue posible guardar el cliente");
+        throw new Error(extractApiErrorMessage(data, "No fue posible guardar el cliente"));
       }
 
       setMessage("Cliente guardado correctamente");
@@ -246,7 +275,7 @@ const ClientManager = ({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "No fue posible eliminar el cliente");
+        throw new Error(extractApiErrorMessage(data, "No fue posible eliminar el cliente"));
       }
 
       setMessage("Cliente eliminado");
