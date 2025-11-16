@@ -57,7 +57,7 @@ type CloudinaryAsset = {
 
 type CloudinaryPickerOptions = {
   folder?: string;
-  onSelect: (asset: CloudinaryAsset) => void;
+  onSelect?: (asset: CloudinaryAsset) => void;
 };
 
 type CloudinaryPickerState = {
@@ -365,6 +365,78 @@ const CloudinaryLibraryDialog = ({
         </div>
       </div>
     </div>
+  );
+};
+
+const CloudinaryLibraryShortcut = ({
+  cloudinaryReady,
+  openCloudinaryPicker,
+}: {
+  cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
+}) => {
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleSelect = useCallback(
+    (asset: CloudinaryAsset) => {
+      const copyToClipboard = async () => {
+        const label = asset.publicId || asset.url;
+
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(asset.url);
+            setMessage(`Se copió la URL de “${label}” al portapapeles. Pégala en el campo que prefieras.`);
+            return;
+          } catch {
+            // Fall through to manual copy message.
+          }
+        }
+
+        setMessage(
+          `Seleccionaste “${label}”. Copia manualmente esta URL: ${asset.url || "sin URL pública"}`,
+        );
+      };
+
+      void copyToClipboard();
+    },
+    [],
+  );
+
+  if (!cloudinaryReady || !openCloudinaryPicker) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-3xl border border-foreground/10 bg-foreground/5 p-6">
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <h2 className="text-lg font-semibold text-foreground/90">Biblioteca de imágenes</h2>
+          <p className="text-sm text-foreground/60">
+            Abre la biblioteca de Cloudinary para reutilizar logos, mockups y capturas sin volver a subirlos.
+          </p>
+        </header>
+
+        {message && (
+          <p className="rounded-2xl border border-foreground/10 bg-background px-4 py-3 text-sm text-foreground/70">
+            {message}
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openCloudinaryPicker({ onSelect: handleSelect })}
+            className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition hover:bg-foreground/90"
+          >
+            Abrir biblioteca
+          </button>
+          <p className="text-xs text-foreground/60">
+            Al seleccionar una imagen se copiará automáticamente su URL segura al portapapeles para pegarla en cualquier
+            formulario.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 };
 
@@ -1935,6 +2007,11 @@ const AdminDashboard = ({
           entorno para habilitar las cargas directas de medios. Puedes pegar URLs manualmente si ya tienes tus activos.
         </div>
       )}
+
+      <CloudinaryLibraryShortcut
+        cloudinaryReady={cloudinaryReady}
+        openCloudinaryPicker={cloudinaryReady ? openPicker : undefined}
+      />
 
       <ClientManager
         clients={clients}

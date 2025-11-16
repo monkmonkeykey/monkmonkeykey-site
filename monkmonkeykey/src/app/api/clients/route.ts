@@ -7,6 +7,22 @@ import { clientPayloadSchema } from "@/server/validation";
 import { upsertClient } from "@/server/clients";
 import { verifyRequestSession } from "@/server/auth";
 
+const respondWithMongoError = (error: unknown, action: string) => {
+  const detail =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message
+      : typeof error === "string" && error.trim().length > 0
+        ? error
+        : "Error desconocido";
+
+  console.error(`[Clients API] ${action}`, error);
+
+  return NextResponse.json(
+    { error: `${action}. Detalle: ${detail}` },
+    { status: 500 },
+  );
+};
+
 export async function GET() {
   const clients = await getClients();
   return NextResponse.json(clients satisfies Client[]);
@@ -46,18 +62,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
-  const client = await upsertClient(parseResult.data);
+  try {
+    const client = await upsertClient(parseResult.data);
 
-  if (!client) {
-    return NextResponse.json(
-      {
-        error:
-          "No fue posible conectarse con MongoDB para guardar el cliente. Revisa las credenciales y el acceso de red.",
-      },
-      { status: 500 },
-    );
+    if (!client) {
+      return NextResponse.json(
+        {
+          error:
+            "No fue posible conectarse con MongoDB para guardar el cliente. Revisa las credenciales y el acceso de red.",
+        },
+        { status: 500 },
+      );
+    }
+
+    await refreshClientsCache();
+    return NextResponse.json(client satisfies Client);
+  } catch (error) {
+    return respondWithMongoError(error, "MongoDB rechazó la operación al guardar el cliente");
   }
-
-  await refreshClientsCache();
-  return NextResponse.json(client satisfies Client);
 }

@@ -7,6 +7,22 @@ import { deleteClient, upsertClient } from "@/server/clients";
 import { clientPayloadSchema } from "@/server/validation";
 import { verifyRequestSession } from "@/server/auth";
 
+const respondWithMongoError = (error: unknown, action: string) => {
+  const detail =
+    error instanceof Error && error.message.trim().length > 0
+      ? error.message
+      : typeof error === "string" && error.trim().length > 0
+        ? error
+        : "Error desconocido";
+
+  console.error(`[Clients API] ${action}`, error);
+
+  return NextResponse.json(
+    { error: `${action}. Detalle: ${detail}` },
+    { status: 500 },
+  );
+};
+
 type RouteContext = {
   params: Promise<{ slug: string }>;
 };
@@ -61,20 +77,24 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
-  const client = await upsertClient(parseResult.data);
+  try {
+    const client = await upsertClient(parseResult.data);
 
-  if (!client) {
-    return NextResponse.json(
-      {
-        error:
-          "No fue posible conectarse con MongoDB para guardar el cliente. Revisa las credenciales y el acceso de red.",
-      },
-      { status: 500 },
-    );
+    if (!client) {
+      return NextResponse.json(
+        {
+          error:
+            "No fue posible conectarse con MongoDB para guardar el cliente. Revisa las credenciales y el acceso de red.",
+        },
+        { status: 500 },
+      );
+    }
+
+    await refreshClientsCache();
+    return NextResponse.json(client satisfies Client);
+  } catch (error) {
+    return respondWithMongoError(error, "MongoDB rechazó la operación al actualizar el cliente");
   }
-
-  await refreshClientsCache();
-  return NextResponse.json(client satisfies Client);
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
@@ -93,17 +113,21 @@ export async function DELETE(request: Request, context: RouteContext) {
 
   const params = await context.params;
 
-  const success = await deleteClient(params.slug);
+  try {
+    const success = await deleteClient(params.slug);
 
-  if (!success) {
-    return NextResponse.json(
-      {
-        error: "No fue posible conectarse con MongoDB para eliminar el cliente. Revisa las credenciales y el acceso de red.",
-      },
-      { status: 500 },
-    );
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: "No fue posible conectarse con MongoDB para eliminar el cliente. Revisa las credenciales y el acceso de red.",
+        },
+        { status: 500 },
+      );
+    }
+
+    await refreshClientsCache();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return respondWithMongoError(error, "MongoDB rechazó la operación al eliminar el cliente");
   }
-
-  await refreshClientsCache();
-  return NextResponse.json({ success: true });
 }
