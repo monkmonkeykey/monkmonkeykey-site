@@ -57,7 +57,7 @@ Para cerrar sesión usa el botón “Cerrar sesión” dentro del panel o borra 
     node scripts/mongodb-smoke-test.mjs
   ```
   El script insertará un registro temporal en la colección definida por `MONGODB_CLIENTS_COLLECTION` (o `clients` si no lo cambiaste),
-  lo leerá y lo borrará. Si ves errores de `querySrv` o SSL aquí, debes resolverlos en Atlas/VPC antes de volver a usar el panel.
+  lo leerá, lo actualizará y finalmente lo borrará. Si ves errores de `querySrv` o SSL aquí, debes resolverlos en Atlas/VPC antes de volver a usar el panel.
   Cuando el servidor detecta este mismo error en tiempo de ejecución intentará automáticamente convertir tu URI `mongodb+srv://` a
   una conexión directa `mongodb://` (forzando `directConnection=true` y `tls=true`). Si el fallback logra conectarse verás un único
   aviso en consola y el panel quedará funcional sin tocar las credenciales.

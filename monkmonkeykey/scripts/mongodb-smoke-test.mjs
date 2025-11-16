@@ -41,8 +41,28 @@ async function main() {
     const stored = await collection.findOne({ slug }, { projection: { _id: 0 } });
     console.log("[mongo-smoke-test] Documento recuperado:", stored);
 
+    const updatedSummary = {
+      es: "Registro de diagnóstico actualizado",
+      en: "Diagnostic record updated",
+    };
+
+    await collection.updateOne(
+      { slug },
+      {
+        $set: {
+          summary: updatedSummary,
+          website: "https://example.org/actualizado",
+          updatedAt: new Date(),
+        },
+      },
+    );
+    const updated = await collection.findOne({ slug }, { projection: { _id: 0 } });
+    console.log("[mongo-smoke-test] Documento actualizado:", updated);
+
     await collection.deleteOne({ slug });
-    console.log("[mongo-smoke-test] Registro temporal eliminado. La conexión funciona correctamente.");
+    console.log(
+      "[mongo-smoke-test] Registro temporal eliminado. Insertar, consultar, editar y borrar funcionan correctamente.",
+    );
   } finally {
     await client.close();
   }
