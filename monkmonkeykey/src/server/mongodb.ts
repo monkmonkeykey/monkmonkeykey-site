@@ -31,31 +31,43 @@ type MongoModule = {
 };
 
 let mongoModule: MongoModule | null | undefined;
+let mongoModulePromise: Promise<MongoModule | null> | null = null;
 let mongoClientPromise: Promise<MongoClientInstance> | null = null;
 let mongoClient: MongoClientInstance | null = null;
 let warnedMissingDriver = false;
 let warnedConnectionFailure = false;
 
-const loadMongoModule = (): MongoModule | null => {
+const loadMongoModule = async (): Promise<MongoModule | null> => {
   if (mongoModule !== undefined) {
     return mongoModule;
   }
 
-  try {
-    mongoModule = (eval("require") as NodeJS.Require)("mongodb") as MongoModule;
-    return mongoModule;
-  } catch {
-    mongoModule = null;
+  if (!mongoModulePromise) {
+    mongoModulePromise = import("mongodb")
+      .then((module) => {
+        mongoModule = module as MongoModule;
+        return mongoModule;
+      })
+      .catch((error) => {
+        mongoModule = null;
 
-    if (!warnedMissingDriver) {
-      warnedMissingDriver = true;
-      console.warn(
-        "MongoDB driver is not installed. Install it with `npm install mongodb` to enable database features.",
-      );
-    }
+        if (!warnedMissingDriver) {
+          warnedMissingDriver = true;
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown MongoDB driver load error";
+          console.warn(
+            `MongoDB driver failed to load. Install it with \`npm install mongodb\` to enable database features. Error: ${errorMessage}`,
+          );
+        }
 
-    return null;
+        return null;
+      })
+      .finally(() => {
+        mongoModulePromise = null;
+      });
   }
+
+  return mongoModulePromise;
 };
 
 export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
@@ -63,7 +75,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     return null;
   }
 
-  const mongodb = loadMongoModule();
+  const mongodb = await loadMongoModule();
 
   if (!mongodb) {
     return null;
