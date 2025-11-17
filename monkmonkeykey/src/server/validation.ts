@@ -15,6 +15,7 @@ export const clientImageSchema = z
     src: z.string().min(1).optional(),
     publicId: z.string().min(1).optional(),
     alt: localeTextSchema,
+    footnote: localeTextSchema.optional(),
   })
   .refine((value) => Boolean(value.src) || Boolean(value.publicId), {
     message: "Image requires a src or publicId",

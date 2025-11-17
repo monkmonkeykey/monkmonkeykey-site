@@ -10,6 +10,14 @@ type ClientsPageClientProps = {
   clients: Client[];
 };
 
+const hasLocaleContent = (value: { es: string; en: string } | undefined): boolean => {
+  if (!value) {
+    return false;
+  }
+
+  return value.es.trim().length > 0 || value.en.trim().length > 0;
+};
+
 const PAGE_TITLE = {
   es: "Clientes y aliados",
   en: "Clients and partners",
@@ -69,6 +77,12 @@ export default function ClientsPageClient({ clients }: ClientsPageClientProps) {
                   className="object-cover"
                 />
               </div>
+            )}
+
+            {client.image?.footnote && hasLocaleContent(client.image.footnote) && (
+              <p className="text-xs text-foreground/50">
+                {translate(locale, client.image.footnote)}
+              </p>
             )}
 
             <div className="space-y-2">

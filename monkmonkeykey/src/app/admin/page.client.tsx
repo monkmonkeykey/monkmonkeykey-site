@@ -30,6 +30,7 @@ type ImageField = {
   src: string;
   publicId: string;
   alt: LocaleField;
+  footnote: LocaleField;
 };
 
 type ProjectMetaField = {
@@ -70,11 +71,15 @@ const createLocaleField = (value?: LocaleText | LocalizedValue): LocaleField => 
   return { es: value.es ?? "", en: value.en ?? "" };
 };
 
-const createImageField = (id: string, image?: { src?: string; publicId?: string; alt: LocaleText }): ImageField => ({
+const createImageField = (
+  id: string,
+  image?: { src?: string; publicId?: string; alt: LocaleText; footnote?: LocaleText },
+): ImageField => ({
   id,
   src: image?.src ?? "",
   publicId: image?.publicId ?? "",
   alt: createLocaleField(image?.alt),
+  footnote: createLocaleField(image?.footnote),
 });
 
 const createMetaField = (id: string, meta?: { label: LocaleText; value: LocalizedValue }): ProjectMetaField => ({
@@ -95,6 +100,19 @@ const trimLocaleField = (value: LocaleField): LocaleField => ({
 
 const hasLocaleContent = (value: LocaleField): boolean =>
   value.es.trim().length > 0 || value.en.trim().length > 0;
+
+const normalizeOptionalLocaleField = (value: LocaleField): LocaleField | undefined => {
+  const trimmed = trimLocaleField(value);
+
+  if (!hasLocaleContent(trimmed)) {
+    return undefined;
+  }
+
+  return {
+    es: trimmed.es || trimmed.en,
+    en: trimmed.en || trimmed.es,
+  };
+};
 
 const imageHasData = (image: ImageField): boolean =>
   image.src.trim().length > 0 || image.publicId.trim().length > 0;
@@ -278,10 +296,13 @@ const ClientManager = ({
       }
 
       if (imageHasData(form.image)) {
+        const footnote = normalizeOptionalLocaleField(form.image.footnote);
+
         payload.image = {
           src: form.image.src.trim() || undefined,
           publicId: form.image.publicId.trim() || undefined,
           alt: trimLocaleField(form.image.alt),
+          footnote,
         };
       }
 
@@ -624,6 +645,42 @@ const ClientManager = ({
                   className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
                 />
               </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (ES)</span>
+                <input
+                  value={form.image.footnote.es}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      image: {
+                        ...previous.image,
+                        footnote: { ...previous.image.footnote, es: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Crédito o contexto de la imagen"
+                />
+              </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (EN)</span>
+                <input
+                  value={form.image.footnote.en}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      image: {
+                        ...previous.image,
+                        footnote: { ...previous.image.footnote, en: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Image credit or caption"
+                />
+              </label>
             </div>
           </div>
 
@@ -779,6 +836,7 @@ const ProjectManager = ({
         src: form.cover.src.trim() || undefined,
         publicId: form.cover.publicId.trim() || undefined,
         alt: trimLocaleField(form.cover.alt),
+        footnote: normalizeOptionalLocaleField(form.cover.footnote),
       },
       gallery: form.gallery
         .filter(imageHasData)
@@ -786,6 +844,7 @@ const ProjectManager = ({
           src: image.src.trim() || undefined,
           publicId: image.publicId.trim() || undefined,
           alt: trimLocaleField(image.alt),
+          footnote: normalizeOptionalLocaleField(image.footnote),
         })),
       description,
       meta: form.meta
@@ -1222,6 +1281,42 @@ const ProjectManager = ({
                   className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
                 />
               </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (ES)</span>
+                <input
+                  value={form.cover.footnote.es}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      cover: {
+                        ...previous.cover,
+                        footnote: { ...previous.cover.footnote, es: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Crédito o nota"
+                />
+              </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (EN)</span>
+                <input
+                  value={form.cover.footnote.en}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      cover: {
+                        ...previous.cover,
+                        footnote: { ...previous.cover.footnote, en: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Credit or caption"
+                />
+              </label>
             </div>
           </div>
 
@@ -1394,6 +1489,44 @@ const ProjectManager = ({
                           }))
                         }
                         className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                      />
+                    </label>
+
+                    <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                      <span>Nota al pie (ES)</span>
+                      <input
+                        value={image.footnote.es}
+                        onChange={(event) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            gallery: previous.gallery.map((item) =>
+                              item.id === image.id
+                                ? { ...item, footnote: { ...item.footnote, es: event.target.value } }
+                                : item,
+                            ),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                        placeholder="Crédito o nota"
+                      />
+                    </label>
+
+                    <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                      <span>Nota al pie (EN)</span>
+                      <input
+                        value={image.footnote.en}
+                        onChange={(event) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            gallery: previous.gallery.map((item) =>
+                              item.id === image.id
+                                ? { ...item, footnote: { ...item.footnote, en: event.target.value } }
+                                : item,
+                            ),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                        placeholder="Credit or caption"
                       />
                     </label>
                   </div>

@@ -16,6 +16,14 @@ type ProjectsPageClientProps = {
   categoryLabels: Record<ProjectCategory, LocaleText>;
 };
 
+const hasLocaleContent = (value: LocaleText | undefined): boolean => {
+  if (!value) {
+    return false;
+  }
+
+  return value.es.trim().length > 0 || value.en.trim().length > 0;
+};
+
 const PAGE_TITLE = {
   es: "Proyectos destacados",
   en: "Featured work",
@@ -202,6 +210,12 @@ export default function ProjectsPageClient({
                       />
                     </div>
 
+                    {hasLocaleContent(project.cover.footnote) && (
+                      <p className="text-xs text-foreground/50">
+                        {translate(locale, project.cover.footnote!)}
+                      </p>
+                    )}
+
                     <div className="space-y-6">
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-3">
@@ -336,6 +350,11 @@ export default function ProjectsPageClient({
                                 sizes="(min-width: 1024px) 20vw, 100vw"
                                 className="object-cover"
                               />
+                              {hasLocaleContent(image.footnote) && (
+                                <p className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/80 to-transparent px-3 py-2 text-xs text-foreground/70 backdrop-blur-sm">
+                                  {translate(locale, image.footnote!)}
+                                </p>
+                              )}
                             </div>
                           ))}
                         </div>

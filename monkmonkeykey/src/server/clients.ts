@@ -13,6 +13,7 @@ export type ClientPayload = {
     alt: { es: string; en: string };
     src?: string;
     publicId?: string;
+    footnote?: { es: string; en: string };
   } | null;
   kind?: ClientKind;
   order?: number | null;
@@ -24,20 +25,30 @@ type ClientDocument = {
   sector: { es: string; en: string };
   summary: { es: string; en: string };
   website?: string;
-  image?: (ClientImage & { publicId?: string }) | null;
+  image?: (ClientImage & { publicId?: string; footnote?: { es: string; en: string } }) | null;
   kind?: ClientKind;
   order?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 };
 
+const normalizeLocaleText = (value: { es: string; en: string }) => ({
+  es: value.es.trim(),
+  en: value.en.trim(),
+});
+
 const normalizeImage = (
   image:
-    | (ClientImage & { publicId?: string })
-    | { alt: { es: string; en: string }; src?: string; publicId?: string }
+    | (ClientImage & { publicId?: string; footnote?: { es: string; en: string } })
+    | {
+        alt: { es: string; en: string };
+        src?: string;
+        publicId?: string;
+        footnote?: { es: string; en: string };
+      }
     | undefined
     | null,
-): (ClientImage & { publicId?: string }) | undefined => {
+): (ClientImage & { publicId?: string; footnote?: { es: string; en: string } }) | undefined => {
   if (!image) {
     return undefined;
   }
@@ -47,6 +58,8 @@ const normalizeImage = (
 
   return {
     ...image,
+    alt: normalizeLocaleText(image.alt),
+    footnote: image.footnote ? normalizeLocaleText(image.footnote) : undefined,
     src,
   };
 };

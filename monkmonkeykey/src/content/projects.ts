@@ -188,6 +188,7 @@ const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[
 
     const src = (item as Record<string, unknown>).src;
     const alt = (item as Record<string, unknown>).alt;
+    const footnote = (item as Record<string, unknown>).footnote;
 
     if (typeof src !== "string") {
       throw new Error(`Gallery item ${index + 1} for ${projectName} is missing a src`);
@@ -196,6 +197,9 @@ const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[
     return {
       src,
       alt: parseLocaleText(alt, `${projectName} gallery alt ${index + 1}`),
+      footnote: footnote
+        ? parseLocaleText(footnote, `${projectName} gallery footnote ${index + 1}`)
+        : undefined,
     };
   });
 };
@@ -282,6 +286,9 @@ const readProjectFile = (filePath: string): { project: Project; order: number } 
   const cover = {
     src: frontmatter.cover?.src ?? "",
     alt: parseLocaleText(frontmatter.cover?.alt, `${frontmatter.slug} cover alt`),
+    footnote: frontmatter.cover?.footnote
+      ? parseLocaleText(frontmatter.cover.footnote, `${frontmatter.slug} cover footnote`)
+      : undefined,
   };
 
   if (!cover.src) {
