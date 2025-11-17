@@ -17,6 +17,7 @@ type ProjectImagePayload = {
   src?: string | null;
   alt: LocaleText;
   publicId?: string | null;
+  footnote?: LocaleText | null;
 };
 
 export type ProjectPayload = {
@@ -80,6 +81,7 @@ const normalizeImage = (
   return {
     alt: normalizeLocaleText(image.alt),
     publicId: image.publicId ?? undefined,
+    footnote: image.footnote ? normalizeLocaleText(image.footnote) : undefined,
     src,
   };
 };

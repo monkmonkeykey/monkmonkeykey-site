@@ -30,31 +30,103 @@ type MongoModule = {
   MongoClient: new (uri: string, options?: Record<string, unknown>) => MongoClientInstance;
 };
 
-let mongoModule: MongoModule | null | undefined;
-let mongoClientPromise: Promise<MongoClientInstance> | null = null;
-let mongoClient: MongoClientInstance | null = null;
-let warnedMissingDriver = false;
+const dynamicImport = new Function(
+  "specifier",
+  "return import(specifier);",
+) as <TModule>(specifier: string) => Promise<TModule>;
 
-const loadMongoModule = (): MongoModule | null => {
+let mongoModule: MongoModule | null | undefined;
+let mongoModulePromise: Promise<MongoModule | null> | null = null;
+let mongoClientPromise: Promise<MongoClientInstance> | null = null;
+let warnedMissingDriver = false;
+let warnedConnectionFailure = false;
+const RETRY_DELAY_MS = 5 * 60 * 1000;
+let nextRetryTimestamp = 0;
+let activeMongoUri: string | null = null;
+
+const buildSrvFallbackUri = (uri: string): string | null => {
+  if (!uri.startsWith("mongodb+srv://")) {
+    return null;
+  }
+
+  try {
+    const fallbackUri = uri.replace("mongodb+srv://", "mongodb://");
+    const parsed = new URL(fallbackUri);
+
+    if (!parsed.searchParams.has("directConnection")) {
+      parsed.searchParams.set("directConnection", "true");
+    }
+
+    if (!parsed.searchParams.has("tls")) {
+      parsed.searchParams.set("tls", "true");
+    }
+
+    return parsed.toString();
+  } catch (error) {
+    console.warn("[MongoDB] No fue posible preparar el URI alterno:", error);
+    return null;
+  }
+};
+
+const srvFallbackUri = buildSrvFallbackUri(env.mongodbUri);
+
+const shouldRetryWithSrvFallback = (error: unknown): boolean => {
+  if (!(error instanceof Error) || typeof error.message !== "string") {
+    return false;
+  }
+
+  const normalized = error.message.toLowerCase();
+  return (
+    normalized.includes("querysrv") ||
+    normalized.includes("enodata") ||
+    normalized.includes("erefused") ||
+    normalized.includes("enotfound")
+  );
+};
+
+const connectWithUri = async (mongodb: MongoModule, uri: string): Promise<MongoClientInstance> => {
+  const clientInstance = new mongodb.MongoClient(uri, {
+    maxPoolSize: 5,
+    serverSelectionTimeoutMS: 5000,
+  });
+
+  const connectedClient = await clientInstance.connect();
+  activeMongoUri = uri;
+  warnedConnectionFailure = false;
+  return connectedClient;
+};
+
+const loadMongoModule = async (): Promise<MongoModule | null> => {
   if (mongoModule !== undefined) {
     return mongoModule;
   }
 
-  try {
-    mongoModule = (eval("require") as NodeJS.Require)("mongodb") as MongoModule;
-    return mongoModule;
-  } catch {
-    mongoModule = null;
+  if (!mongoModulePromise) {
+    mongoModulePromise = dynamicImport<MongoModule>("mongodb")
+      .then((module) => {
+        mongoModule = module as MongoModule;
+        return mongoModule;
+      })
+      .catch((error) => {
+        mongoModule = null;
 
-    if (!warnedMissingDriver) {
-      warnedMissingDriver = true;
-      console.warn(
-        "MongoDB driver is not installed. Install it with `npm install mongodb` to enable database features.",
-      );
-    }
+        if (!warnedMissingDriver) {
+          warnedMissingDriver = true;
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown MongoDB driver load error";
+          console.warn(
+            `MongoDB driver failed to load. Install it with \`npm install mongodb\` to enable database features. Error: ${errorMessage}`,
+          );
+        }
 
-    return null;
+        return null;
+      })
+      .finally(() => {
+        mongoModulePromise = null;
+      });
   }
+
+  return mongoModulePromise;
 };
 
 export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
@@ -62,25 +134,52 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     return null;
   }
 
-  const mongodb = loadMongoModule();
+  if (nextRetryTimestamp > Date.now()) {
+    return null;
+  }
+
+  const mongodb = await loadMongoModule();
 
   if (!mongodb) {
     return null;
   }
 
   if (!mongoClientPromise) {
-    mongoClient = new mongodb.MongoClient(env.mongodbUri, {
-      maxPoolSize: 5,
-    });
-    mongoClientPromise = mongoClient.connect().then((client) => {
-      mongoClient = client;
-      return client;
+    const initialUri = activeMongoUri ?? env.mongodbUri;
+    mongoClientPromise = connectWithUri(mongodb, initialUri).catch(async (error) => {
+      if (
+        srvFallbackUri &&
+        initialUri === env.mongodbUri &&
+        shouldRetryWithSrvFallback(error)
+      ) {
+        console.warn(
+          "[MongoDB] Error al resolver el registro SRV. Reintentando con conexión directa...",
+        );
+        return connectWithUri(mongodb, srvFallbackUri);
+      }
+
+      throw error;
     });
   }
 
-  const client = await mongoClientPromise;
-  mongoClient = client;
-  return client;
+  try {
+    const client = await mongoClientPromise;
+    return client;
+  } catch (error) {
+    mongoClientPromise = null;
+    nextRetryTimestamp = Date.now() + RETRY_DELAY_MS;
+
+    if (!warnedConnectionFailure) {
+      warnedConnectionFailure = true;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown MongoDB connection error";
+      console.error(
+        `Failed to connect to MongoDB. Falling back to Markdown content. Error: ${errorMessage}`,
+      );
+    }
+
+    return null;
+  }
 };
 
 export const getMongoDatabase = async (): Promise<MongoDatabase | null> => {

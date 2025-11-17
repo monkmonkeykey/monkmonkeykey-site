@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Client, ClientKind } from "@/content/clients";
@@ -8,6 +8,13 @@ import type { LocalizedValue, Project, ProjectCategory } from "@/domain/projects
 import { PROJECT_CATEGORY_LABELS } from "@/domain/projects";
 
 import type { LocaleText } from "@/lib/i18n";
+import { extractApiErrorMessage } from "@/lib/admin-api";
+import {
+  CloudinaryLibraryDialog,
+  type CloudinaryAsset,
+  type CloudinaryPickerOptions,
+  useCloudinaryPicker,
+} from "@/components/cloudinary/picker";
 
 type AdminDashboardProps = {
   clients: Client[];
@@ -23,6 +30,7 @@ type ImageField = {
   src: string;
   publicId: string;
   alt: LocaleField;
+  footnote: LocaleField;
 };
 
 type ProjectMetaField = {
@@ -63,11 +71,15 @@ const createLocaleField = (value?: LocaleText | LocalizedValue): LocaleField => 
   return { es: value.es ?? "", en: value.en ?? "" };
 };
 
-const createImageField = (id: string, image?: { src?: string; publicId?: string; alt: LocaleText }): ImageField => ({
+const createImageField = (
+  id: string,
+  image?: { src?: string; publicId?: string; alt: LocaleText; footnote?: LocaleText },
+): ImageField => ({
   id,
   src: image?.src ?? "",
   publicId: image?.publicId ?? "",
   alt: createLocaleField(image?.alt),
+  footnote: createLocaleField(image?.footnote),
 });
 
 const createMetaField = (id: string, meta?: { label: LocaleText; value: LocalizedValue }): ProjectMetaField => ({
@@ -88,6 +100,19 @@ const trimLocaleField = (value: LocaleField): LocaleField => ({
 
 const hasLocaleContent = (value: LocaleField): boolean =>
   value.es.trim().length > 0 || value.en.trim().length > 0;
+
+const normalizeOptionalLocaleField = (value: LocaleField): LocaleField | undefined => {
+  const trimmed = trimLocaleField(value);
+
+  if (!hasLocaleContent(trimmed)) {
+    return undefined;
+  }
+
+  return {
+    es: trimmed.es || trimmed.en,
+    en: trimmed.en || trimmed.es,
+  };
+};
 
 const imageHasData = (image: ImageField): boolean =>
   image.src.trim().length > 0 || image.publicId.trim().length > 0;
@@ -110,7 +135,7 @@ const uploadToCloudinary = async (file: File, folder: string) => {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? "Cloudinary rechazó la carga");
+    throw new Error(extractApiErrorMessage(data, "Cloudinary rechazó la carga"));
   }
 
   const payload = (await response.json()) as { publicId: string; src: string };
@@ -118,12 +143,86 @@ const uploadToCloudinary = async (file: File, folder: string) => {
   return payload;
 };
 
+const CloudinaryLibraryShortcut = ({
+  cloudinaryReady,
+  openCloudinaryPicker,
+}: {
+  cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
+}) => {
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleSelect = useCallback(
+    (asset: CloudinaryAsset) => {
+      const copyToClipboard = async () => {
+        const label = asset.publicId || asset.url;
+
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(asset.url);
+            setMessage(`Se copió la URL de “${label}” al portapapeles. Pégala en el campo que prefieras.`);
+            return;
+          } catch {
+            // Fall through to manual copy message.
+          }
+        }
+
+        setMessage(
+          `Seleccionaste “${label}”. Copia manualmente esta URL: ${asset.url || "sin URL pública"}`,
+        );
+      };
+
+      void copyToClipboard();
+    },
+    [],
+  );
+
+  if (!cloudinaryReady || !openCloudinaryPicker) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-3xl border border-foreground/10 bg-foreground/5 p-6">
+      <div className="space-y-4">
+        <header className="space-y-1">
+          <h2 className="text-lg font-semibold text-foreground/90">Biblioteca de imágenes</h2>
+          <p className="text-sm text-foreground/60">
+            Abre la biblioteca de Cloudinary para reutilizar logos, mockups y capturas sin volver a subirlos.
+          </p>
+        </header>
+
+        {message && (
+          <p className="rounded-2xl border border-foreground/10 bg-background px-4 py-3 text-sm text-foreground/70">
+            {message}
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => openCloudinaryPicker({ onSelect: handleSelect })}
+            className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition hover:bg-foreground/90"
+          >
+            Abrir biblioteca
+          </button>
+          <p className="text-xs text-foreground/60">
+            Al seleccionar una imagen se copiará automáticamente su URL segura al portapapeles para pegarla en cualquier
+            formulario.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const ClientManager = ({
   clients,
   cloudinaryReady,
+  openCloudinaryPicker,
 }: {
   clients: Client[];
   cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
 }) => {
   const router = useRouter();
   const [selectedSlug, setSelectedSlug] = useState<string>("new");
@@ -197,10 +296,13 @@ const ClientManager = ({
       }
 
       if (imageHasData(form.image)) {
+        const footnote = normalizeOptionalLocaleField(form.image.footnote);
+
         payload.image = {
           src: form.image.src.trim() || undefined,
           publicId: form.image.publicId.trim() || undefined,
           alt: trimLocaleField(form.image.alt),
+          footnote,
         };
       }
 
@@ -216,7 +318,7 @@ const ClientManager = ({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "No fue posible guardar el cliente");
+        throw new Error(extractApiErrorMessage(data, "No fue posible guardar el cliente"));
       }
 
       setMessage("Cliente guardado correctamente");
@@ -246,7 +348,7 @@ const ClientManager = ({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "No fue posible eliminar el cliente");
+        throw new Error(extractApiErrorMessage(data, "No fue posible eliminar el cliente"));
       }
 
       setMessage("Cliente eliminado");
@@ -453,6 +555,30 @@ const ClientManager = ({
                   Subir desde Cloudinary
                 </label>
               )}
+              {cloudinaryReady && openCloudinaryPicker && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openCloudinaryPicker({
+                      folder: form.slug.trim() ? `clients/${form.slug.trim()}` : "clients",
+                      onSelect: (asset) => {
+                        setForm((previous) => ({
+                          ...previous,
+                          image: {
+                            ...previous.image,
+                            publicId: asset.publicId,
+                            src: asset.url,
+                          },
+                        }));
+                        setMessage("Imagen asignada desde Cloudinary");
+                      },
+                    })
+                  }
+                  className="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-4 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                >
+                  Elegir existente
+                </button>
+              )}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -519,6 +645,42 @@ const ClientManager = ({
                   className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
                 />
               </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (ES)</span>
+                <input
+                  value={form.image.footnote.es}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      image: {
+                        ...previous.image,
+                        footnote: { ...previous.image.footnote, es: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Crédito o contexto de la imagen"
+                />
+              </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (EN)</span>
+                <input
+                  value={form.image.footnote.en}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      image: {
+                        ...previous.image,
+                        footnote: { ...previous.image.footnote, en: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Image credit or caption"
+                />
+              </label>
             </div>
           </div>
 
@@ -556,10 +718,12 @@ const ProjectManager = ({
   projects,
   clients,
   cloudinaryReady,
+  openCloudinaryPicker,
 }: {
   projects: Project[];
   clients: Client[];
   cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
 }) => {
   const router = useRouter();
   const [selectedSlug, setSelectedSlug] = useState<string>("new");
@@ -672,6 +836,7 @@ const ProjectManager = ({
         src: form.cover.src.trim() || undefined,
         publicId: form.cover.publicId.trim() || undefined,
         alt: trimLocaleField(form.cover.alt),
+        footnote: normalizeOptionalLocaleField(form.cover.footnote),
       },
       gallery: form.gallery
         .filter(imageHasData)
@@ -679,6 +844,7 @@ const ProjectManager = ({
           src: image.src.trim() || undefined,
           publicId: image.publicId.trim() || undefined,
           alt: trimLocaleField(image.alt),
+          footnote: normalizeOptionalLocaleField(image.footnote),
         })),
       description,
       meta: form.meta
@@ -1027,6 +1193,30 @@ const ProjectManager = ({
                   Subir portada
                 </label>
               )}
+              {cloudinaryReady && openCloudinaryPicker && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openCloudinaryPicker({
+                      folder: form.slug.trim() ? `projects/${form.slug.trim()}` : "projects",
+                      onSelect: (asset) => {
+                        setForm((previous) => ({
+                          ...previous,
+                          cover: {
+                            ...previous.cover,
+                            publicId: asset.publicId,
+                            src: asset.url,
+                          },
+                        }));
+                        setMessage("Portada actualizada desde Cloudinary");
+                      },
+                    })
+                  }
+                  className="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-4 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                >
+                  Elegir existente
+                </button>
+              )}
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -1091,6 +1281,42 @@ const ProjectManager = ({
                   className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
                 />
               </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (ES)</span>
+                <input
+                  value={form.cover.footnote.es}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      cover: {
+                        ...previous.cover,
+                        footnote: { ...previous.cover.footnote, es: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Crédito o nota"
+                />
+              </label>
+
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                <span>Nota al pie (EN)</span>
+                <input
+                  value={form.cover.footnote.en}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      cover: {
+                        ...previous.cover,
+                        footnote: { ...previous.cover.footnote, en: event.target.value },
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                  placeholder="Credit or caption"
+                />
+              </label>
             </div>
           </div>
 
@@ -1153,6 +1379,30 @@ const ProjectManager = ({
                           />
                           Subir
                         </label>
+                      )}
+                      {cloudinaryReady && openCloudinaryPicker && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openCloudinaryPicker({
+                              folder: form.slug.trim() ? `projects/${form.slug.trim()}/gallery` : "projects",
+                              onSelect: (asset) => {
+                                setForm((previous) => ({
+                                  ...previous,
+                                  gallery: previous.gallery.map((item) =>
+                                    item.id === image.id
+                                      ? { ...item, publicId: asset.publicId, src: asset.url }
+                                      : item,
+                                  ),
+                                }));
+                                setMessage("Imagen de galería actualizada desde Cloudinary");
+                              },
+                            })
+                          }
+                          className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                        >
+                          Elegir existente
+                        </button>
                       )}
                       <button
                         type="button"
@@ -1239,6 +1489,44 @@ const ProjectManager = ({
                           }))
                         }
                         className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                      />
+                    </label>
+
+                    <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                      <span>Nota al pie (ES)</span>
+                      <input
+                        value={image.footnote.es}
+                        onChange={(event) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            gallery: previous.gallery.map((item) =>
+                              item.id === image.id
+                                ? { ...item, footnote: { ...item.footnote, es: event.target.value } }
+                                : item,
+                            ),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                        placeholder="Crédito o nota"
+                      />
+                    </label>
+
+                    <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                      <span>Nota al pie (EN)</span>
+                      <input
+                        value={image.footnote.en}
+                        onChange={(event) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            gallery: previous.gallery.map((item) =>
+                              item.id === image.id
+                                ? { ...item, footnote: { ...item.footnote, en: event.target.value } }
+                                : item,
+                            ),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                        placeholder="Credit or caption"
                       />
                     </label>
                   </div>
@@ -1584,6 +1872,8 @@ const AdminDashboard = ({
   databaseReady,
   cloudinaryReady,
 }: AdminDashboardProps) => {
+  const { picker, openPicker, closePicker } = useCloudinaryPicker();
+
   return (
     <div className="space-y-12">
       {!databaseReady && (
@@ -1600,8 +1890,24 @@ const AdminDashboard = ({
         </div>
       )}
 
-      <ClientManager clients={clients} cloudinaryReady={cloudinaryReady} />
-      <ProjectManager projects={projects} clients={clients} cloudinaryReady={cloudinaryReady} />
+      <CloudinaryLibraryShortcut
+        cloudinaryReady={cloudinaryReady}
+        openCloudinaryPicker={cloudinaryReady ? openPicker : undefined}
+      />
+
+      <ClientManager
+        clients={clients}
+        cloudinaryReady={cloudinaryReady}
+        openCloudinaryPicker={cloudinaryReady ? openPicker : undefined}
+      />
+      <ProjectManager
+        projects={projects}
+        clients={clients}
+        cloudinaryReady={cloudinaryReady}
+        openCloudinaryPicker={cloudinaryReady ? openPicker : undefined}
+      />
+
+      {cloudinaryReady && <CloudinaryLibraryDialog state={picker} onClose={closePicker} />}
     </div>
   );
 };

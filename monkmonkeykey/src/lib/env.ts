@@ -1,8 +1,14 @@
 const normalize = (value: string | undefined): string => value?.trim() ?? "";
 
+const normalizeWithFallback = (value: string | undefined, fallback: string): string => {
+  const normalized = normalize(value);
+  return normalized.length > 0 ? normalized : fallback;
+};
+
 export const env = {
   mongodbUri: normalize(process.env.MONGODB_URI),
   mongodbDb: normalize(process.env.MONGODB_DB),
+  mongodbClientsCollection: normalizeWithFallback(process.env.MONGODB_CLIENTS_COLLECTION, "clients"),
   cloudinaryCloudName: normalize(process.env.CLOUDINARY_CLOUD_NAME),
   cloudinaryApiKey: normalize(process.env.CLOUDINARY_API_KEY),
   cloudinaryApiSecret: normalize(process.env.CLOUDINARY_API_SECRET),

@@ -6,6 +6,7 @@ import type { LocaleText } from "@/lib/i18n";
 export type ClientImage = {
   src: string;
   alt: LocaleText;
+  footnote?: LocaleText;
 };
 
 export type ClientKind = "client" | "institution" | "partner";
@@ -65,6 +66,7 @@ const parseImage = (value: unknown, clientName: string): ClientImage | undefined
 
   const src = (value as Record<string, unknown>).src;
   const alt = (value as Record<string, unknown>).alt;
+  const footnote = (value as Record<string, unknown>).footnote;
 
   if (typeof src !== "string" || src.length === 0) {
     throw new Error(`Image for ${clientName} must include a src`);
@@ -73,6 +75,7 @@ const parseImage = (value: unknown, clientName: string): ClientImage | undefined
   return {
     src,
     alt: parseLocaleText(alt, `${clientName} image alt`),
+    footnote: footnote ? parseLocaleText(footnote, `${clientName} image footnote`) : undefined,
   };
 };
 

@@ -21,17 +21,17 @@ type HomePageClientProps = {
 };
 
 const HERO_HEADLINE = {
-  es: "Desarrollamos proyectos de arte y cultura desde una práctica técnica y sensible.",
+  es: "Producción técnica audiovisual y desarrollo de obra con nuevos medios para el sector artístico y cultural.",
   en: "A strategic partner to scale your digital products",
 } as const;
 
 const HERO_SUBTITLE = {
-  es: "Entendemos los procesos, contextos y cuidados que cada producción requiere. Nuestra experiencia en artes digitales y electrónicas nos permite atender con precisión las particularidades técnicas y estéticas de cada proyecto.",
+  es: "Somos un estudio especializado en producción técnica audiovisual y nuevos medios, colaborando con museos, universidades y artistas en proyectos que integran arte, tecnología y experimentación. Contamos con experiencia en sistemas de audio multicanal, programación creativa y fabricación mediante impresión 3D.",
   en: "We combine strategy, design, and growth so every release matches your business goals.",
 } as const;
 
 const HERO_PRIMARY = {
-  es: "Agenda una llamada",
+  es: "Contáctanos",
   en: "Book a call",
 } as const;
 

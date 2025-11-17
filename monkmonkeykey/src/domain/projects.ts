@@ -6,6 +6,7 @@ export type LocalizedValue = string | LocaleText;
 export type ProjectGalleryImage = {
   src: string;
   alt: LocaleText;
+  footnote?: LocaleText;
 };
 
 export type ProjectVideoProvider = "youtube" | "vimeo";
